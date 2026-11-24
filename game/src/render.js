@@ -557,14 +557,20 @@ function buildStatic() {
   const waterH = WORLD.size - WATER_TOP;
   const water = new THREE.Mesh(
     new THREE.PlaneGeometry(WORLD.size, waterH),
-    new THREE.MeshLambertMaterial({ color: 0x0a3049 }),
+    // Phong, not Lambert: the moonlight needs a specular sheen on the sea,
+    // or the whole right half of the cover shot reads as flat black.
+    new THREE.MeshPhongMaterial({ color: 0x14405f, shininess: 90, specular: 0x3a5a78 }),
   );
   water.rotation.x = -Math.PI / 2;
   water.position.set(0, 0.5, tz(WATER_TOP + waterH / 2));
   scene.add(water);
-  // Moon glitter on the water, and a lit boat off the beach: the cover
-  // shot's right half is sea, and it needs something in it.
-  for (const [gx, gy, s, o] of [[2400, 3510, 90, 0.22], [2700, 3530, 120, 0.2], [3000, 3510, 80, 0.22], [3200, 3540, 110, 0.18], [2100, 3530, 70, 0.2], [2900, 3560, 100, 0.18]]) {
+  // Moon glitter on the water, and lit boats off the beach: the cover
+  // shot's right half is sea, and it needs something in it. Brighter and
+  // denser than v6.2 — the old 0.2-opacity specks barely registered.
+  // The moon path sits WEST, close to the cover camera: far-east glitter
+  // compresses onto the sign at the horizon, but near glitter spreads
+  // across the frame's right half instead.
+  for (const [gx, gy, s, o] of [[2400, 3510, 100, 0.38], [2700, 3530, 130, 0.36], [2100, 3530, 80, 0.36], [2900, 3560, 110, 0.34], [1980, 3560, 200, 0.45], [2100, 3575, 220, 0.42], [2220, 3555, 200, 0.45], [2340, 3575, 190, 0.4], [2460, 3560, 170, 0.38]]) {
     const glitter = new THREE.Sprite(new THREE.SpriteMaterial({
       map: makeGlowTexture(), color: 0xbdd0ff, transparent: true, opacity: o, depthWrite: false,
     }));
@@ -572,7 +578,11 @@ function buildStatic() {
     glitter.position.set(tx(gx), 3, tz(gy));
     scene.add(glitter);
   }
-  {
+  // Three lit boats spread across the sea side, so the cover shot's right
+  // half has boats at near, middle and far distance, not one dim speck.
+  // Pulled west, toward the cover camera: far-east boats compress onto
+  // the sign at the horizon, near boats spread across the right half.
+  for (const [bx, by, rot] of [[2050, 3545, 0.3], [2200, 3560, -0.5], [2400, 3535, 0.8]]) {
     const boat = new THREE.Group();
     const hull = new THREE.Mesh(
       new THREE.BoxGeometry(64, 12, 20),
@@ -593,13 +603,13 @@ function buildStatic() {
     mast.position.set(10, 32, 0);
     boat.add(mast);
     const glow = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: makeGlowTexture(), color: 0xffd9a0, transparent: true, opacity: 0.5, depthWrite: false,
+      map: makeGlowTexture(), color: 0xffd9a0, transparent: true, opacity: 0.75, depthWrite: false,
     }));
-    glow.scale.set(120, 120, 1);
+    glow.scale.set(180, 180, 1);
     glow.position.set(-6, 16, 0);
     boat.add(glow);
-    boat.position.set(tx(2520), 0, tz(3545));
-    boat.rotation.y = 0.3;
+    boat.position.set(tx(bx), 0, tz(by));
+    boat.rotation.y = rot;
     scene.add(boat);
   }
   // A lit pier reaching into the sea off the beach, with lamps and a pink
@@ -623,9 +633,9 @@ function buildStatic() {
     }
     for (const pz of [-50, -10, 30, 58]) {
       const lamp = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: makeGlowTexture(), color: 0xffc46a, transparent: true, opacity: 0.55, depthWrite: false,
+        map: makeGlowTexture(), color: 0xffc46a, transparent: true, opacity: 0.8, depthWrite: false,
       }));
-      lamp.scale.set(44, 44, 1);
+      lamp.scale.set(80, 80, 1);
       lamp.position.set(0, 14, pz);
       pier.add(lamp);
       const pole = new THREE.Mesh(
@@ -648,13 +658,88 @@ function buildStatic() {
     hutRoof.position.set(0, 24, 52);
     pier.add(hutRoof);
     const hutGlow = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: makeGlowTexture(), color: 0xff2d78, transparent: true, opacity: 0.5, depthWrite: false,
+      map: makeGlowTexture(), color: 0xff2d78, transparent: true, opacity: 0.7, depthWrite: false,
     }));
-    hutGlow.scale.set(80, 80, 1);
+    hutGlow.scale.set(100, 100, 1);
     hutGlow.position.set(0, 16, 52);
     pier.add(hutGlow);
-    pier.position.set(tx(2420), 0, tz(3520));
+    pier.position.set(tx(2150), 0, tz(3520));
     scene.add(pier);
+  }
+  // A distant freighter on the horizon: a dark hull with a row of warm
+  // cabin windows and a red mast light, so the sea has a far edge.
+  // Windows face -z (toward the beach-road camera); the hull's long side
+  // runs east-west so the camera sees the lit side, not the stern.
+  // Pulled west toward the arch so it sits inside the cover frame.
+  {
+    const ship = new THREE.Group();
+    const hull = new THREE.Mesh(
+      new THREE.BoxGeometry(170, 20, 40),
+      new THREE.MeshLambertMaterial({ color: 0x141a24 }),
+    );
+    hull.position.y = 8;
+    ship.add(hull);
+    const winMat = new THREE.MeshBasicMaterial({ color: 0xffd9a0 });
+    for (let i = 0; i < 11; i += 1) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(7, 6, 2), winMat);
+      win.position.set(-75 + i * 15, 10, -21);
+      ship.add(win);
+    }
+    const mast = new THREE.Mesh(
+      new THREE.CylinderGeometry(1, 1, 34, 6),
+      new THREE.MeshLambertMaterial({ color: 0x2a2e36 }),
+    );
+    mast.position.set(20, 28, 0);
+    ship.add(mast);
+    const mastLight = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: makeGlowTexture(), color: 0xff5a5a, transparent: true, opacity: 0.85, depthWrite: false,
+    }));
+    mastLight.scale.set(55, 55, 1);
+    mastLight.position.set(20, 48, 0);
+    ship.add(mastLight);
+    ship.position.set(tx(2350), 0, tz(3580));
+    ship.rotation.y = 0.15;
+    scene.add(ship);
+  }
+  // A lighthouse at the east end of the beach: striped tower with a bright
+  // lamp, so the cover shot's far right has a landmark instead of a void.
+  // Pulled west toward the arch and scaled up, so it reads in the cover
+  // frame instead of vanishing at the horizon.
+  {
+    const light = new THREE.Group();
+    const base = new THREE.Mesh(
+      new THREE.CylinderGeometry(14, 18, 55, 10),
+      new THREE.MeshLambertMaterial({ color: 0xe8e4da }),
+    );
+    base.position.y = 27;
+    light.add(base);
+    const band = new THREE.Mesh(
+      new THREE.CylinderGeometry(12, 14, 22, 10),
+      new THREE.MeshLambertMaterial({ color: 0xc23a2e }),
+    );
+    band.position.y = 66;
+    light.add(band);
+    const top = new THREE.Mesh(
+      new THREE.CylinderGeometry(10, 12, 28, 10),
+      new THREE.MeshLambertMaterial({ color: 0xe8e4da }),
+    );
+    top.position.y = 91;
+    light.add(top);
+    const lampRoom = new THREE.Mesh(
+      new THREE.BoxGeometry(16, 12, 16),
+      new THREE.MeshBasicMaterial({ color: 0xfff2b0 }),
+    );
+    lampRoom.position.y = 110;
+    light.add(lampRoom);
+    const lampGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: makeGlowTexture(), color: 0xfff2b0, transparent: true, opacity: 0.95, depthWrite: false,
+    }));
+    lampGlow.scale.set(170, 170, 1);
+    lampGlow.position.y = 110;
+    light.add(lampGlow);
+    light.scale.set(1.35, 1.35, 1.35);
+    light.position.set(tx(2470), 0, tz(3472));
+    scene.add(light);
   }
 
   // Roads and sidewalks: all strips merged into two meshes (one for the
@@ -944,7 +1029,8 @@ function buildStatic() {
     }
     // Beachfront promenade lamps: a warm dotted line along the sand, so
     // the cover shot's right half has light instead of a dark void.
-    for (let i = 0; i < 6; i += 1) lamps.push({ x: 2050 + i * 230, y: 3432 });
+    // Eight lamps now, reaching east to the lighthouse.
+    for (let i = 0; i < 8; i += 1) lamps.push({ x: 2050 + i * 190, y: 3432 });
     const poleGeo = new THREE.CylinderGeometry(1.4, 1.8, 26, 6);
     const poleMat = new THREE.MeshLambertMaterial({ color: 0x23262e });
     const poles = new THREE.InstancedMesh(poleGeo, poleMat, lamps.length);
@@ -1012,7 +1098,9 @@ function buildStatic() {
   // towers, one on the promenade side and one at the waterline, so the
   // cover shot has a landmark pair in frame instead of an empty right half.
   {
-    const goldTex = makeWindowTexture('#241a08', ['#ffd23d', '#ff2d78', '#fff2a8'], 77, 0.55);
+    // Gold-only palette, ~1 in 5 windows lit: the v6.2 towers were a
+    // pink/yellow confetti column at 55% lit. Calm gold, dark bronze base.
+    const goldTex = makeWindowTexture('#1d1506', ['#ffd23d', '#ffb347', '#ffe9a8'], 77, 0.22);
     // Tall thin towers: tile the facade texture vertically so the windows
     // stay square instead of stretching into pink/yellow bars.
     for (const t of [goldTex.map, goldTex.emissive]) {
@@ -1022,26 +1110,28 @@ function buildStatic() {
     }
     const goldMat = new THREE.MeshPhongMaterial({
       map: goldTex.map, emissiveMap: goldTex.emissive, emissive: 0xffffff,
-      emissiveIntensity: 1.15, color: 0x777777, shininess: 30, specular: 0x222222,
+      emissiveIntensity: 0.7, color: 0x777777, shininess: 30, specular: 0x222222,
     });
-    for (const [gx, gy] of [[2250, 3245], [2250, 3452]]) {
+    // North tower nudged further from the arch so the pair frames the sign
+    // instead of crowding it; the south tower stays on the beach.
+    for (const [gx, gy] of [[2250, 3200], [2250, 3452]]) {
       const tower = new THREE.Mesh(boxGeo, goldMat);
-      tower.scale.set(60, 190, 60);
-      tower.position.set(tx(gx), 95, tz(gy));
+      tower.scale.set(54, 185, 54);
+      tower.position.set(tx(gx), 92.5, tz(gy));
       scene.add(tower);
       const cap = new THREE.Mesh(boxGeo, new THREE.MeshLambertMaterial({ color: 0x6b4d12 }));
-      cap.scale.set(66, 5, 66);
-      cap.position.set(tx(gx), 192, tz(gy));
+      cap.scale.set(60, 5, 60);
+      cap.position.set(tx(gx), 187, tz(gy));
       scene.add(cap);
       const crown = new THREE.Mesh(boxGeo, new THREE.MeshBasicMaterial({ color: 0xffd23d }));
-      crown.scale.set(50, 10, 8);
-      crown.position.set(tx(gx), 198, tz(gy));
+      crown.scale.set(46, 10, 7);
+      crown.position.set(tx(gx), 193, tz(gy));
       scene.add(crown);
       const halo = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: glowTexture, color: 0xffd23d, transparent: true, opacity: 0.4, depthWrite: false,
+        map: glowTexture, color: 0xffd23d, transparent: true, opacity: 0.32, depthWrite: false,
       }));
-      halo.scale.set(220, 220, 1);
-      halo.position.set(tx(gx), 150, tz(gy));
+      halo.scale.set(190, 190, 1);
+      halo.position.set(tx(gx), 140, tz(gy));
       scene.add(halo);
     }
   }

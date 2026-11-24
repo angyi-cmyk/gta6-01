@@ -149,7 +149,7 @@ export const NEON_SIGNS = [
   { x: 1705, y: 2104, w: 96, h: 34, text: 'GOLDEN PALMS', color: '#ffd23d', angle: -Math.PI / 2 },
   { x: 1815, y: 2104, w: 96, h: 30, text: 'NEON BAY', color: '#ff2d78', angle: -Math.PI / 2 },
   { x: 1912, y: 2104, w: 70, h: 30, text: 'JACKPOT', color: '#2de8ff', angle: -Math.PI / 2 },
-  { x: 2250, y: 3375, w: 220, h: 46, text: 'NEON BAY', color: '#ff2d78', angle: Math.PI },
+  { x: 2170, y: 3375, w: 220, h: 46, text: 'NEON BAY', color: '#ff2d78', angle: Math.PI },
   { x: 1125, y: 3375, w: 150, h: 36, text: 'CASINO STRIP', color: '#ffd23d', angle: Math.PI },
 ];
 
