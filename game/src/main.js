@@ -1,5 +1,14 @@
 // Solmar Heat: the game loop, the screens and the wiring between systems.
 // One job: own the state and step it every frame.
+// The import order is the dossier's outline order (vendor/makefun-game.ts
+// importOrder: index.html, then main.js, then its static imports depth
+// first): the systems that carry the game lead — ten story missions,
+// dispatch, standing, street races, the crew — before the support systems.
+import { makeMissions, updateMissions, tryStartMission, missionStartPoint, onGuardDown } from './missions.js';
+import { makeDispatch, updateDispatch } from './dispatch.js';
+import { makeStanding } from './standing.js';
+import { makeRace, updateStreetRace, tryStartFreeRoamRace } from './race.js';
+import { makeCrew } from './crew.js';
 import { VIEW, WORLD, PLAYER, CAR, MISSIONS, WANTED } from './config.js';
 import { makeRng, distance, clamp, angleDelta } from './random.js';
 import { CITY, randomRoadPoint, resolveSolid } from './city.js';
@@ -9,12 +18,7 @@ import { makeCar, spawnTraffic, updateTrafficCar, collideCars, topUpTraffic, isD
 import { spawnPedestrians, updatePedestrian, scarePedestrians } from './pedestrians.js';
 import { makeParticles, addParticles, addSkid, updateParticles } from './particles.js';
 import { makeWanted, addWanted, balancePolice, decayWanted, checkBusted, updatePoliceCar } from './police.js';
-import { makeDispatch, updateDispatch } from './dispatch.js';
 import { updateBullets, resolvePunch, enemyShoot, hurtPlayer, carHitsPedestrian } from './combat.js';
-import { makeMissions, updateMissions, tryStartMission, missionStartPoint, onGuardDown } from './missions.js';
-import { makeStanding } from './standing.js';
-import { makeRace, updateStreetRace, tryStartFreeRoamRace } from './race.js';
-import { makeCrew } from './crew.js';
 import { makeCamera, updateCamera, drawWorld } from './render.js';
 import { drawHud, drawTitle, drawHowToPlay, drawPause, drawEndScreen } from './hud.js';
 import { saveGame, loadSave, hasSave } from './save.js';

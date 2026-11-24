@@ -117,11 +117,11 @@ function stageLateGame(state) {
 }
 
 // Cover: Job 7, the Street Kings race, two checkpoints banked at 0:35 —
-// flat out east on the beach road at three stars, a cruiser on the tail and
-// a dispatch roadblock across the intersection ahead.
+// flat out east on the beach road at five stars, two cruisers on the tail
+// and a dispatch roadblock across the intersection ahead.
 function stageCover(state) {
   stageLateGame(state);
-  state.wanted.stars = 3;
+  state.wanted.stars = 5;
   const car = putPlayerInCar(state, 1125, 3375, 0, '#d94f3d');
   spawnPoliceCar(state);
   spawnPoliceCar(state);
@@ -162,17 +162,17 @@ function stageCover(state) {
   state.missions.objective = 'Street race — checkpoint 3 of 4';
   state.missions.target = { x: RACE_COURSE[2].x, y: RACE_COURSE[2].y, label: 'CP3' };
   // No dialogue here: the box would sit across the road and hide the tail
-  // cruiser and the roadblock.
-  // One cruiser right on the player's tail so the chase is in frame.
-  const tail = state.cars.find((c) => c.type === 'police' && !c.wrecked && !c.roadblock);
-  if (tail) {
-    tail.x = car.x - 190;
+  // cruisers and the roadblock.
+  // Two cruisers right on the player's tail so the chase is in frame.
+  const tails = state.cars.filter((c) => c.type === 'police' && !c.wrecked && !c.roadblock);
+  tails.slice(0, 2).forEach((tail, i) => {
+    tail.x = car.x - 190 - i * 130;
     tail.y = car.y;
     tail.angle = 0;
     tail.vx = 380;
     tail.vy = 0;
     tail.speed = 380;
-  }
+  });
   spawnRoadblock(state, 380);
 }
 
