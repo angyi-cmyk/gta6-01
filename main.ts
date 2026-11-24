@@ -1,4 +1,4 @@
-// Hands the Solmar Heat entry in: copies game/ and screenshots/ from beside
+// Hands the Neon Bay Nights entry in: copies game/ and screenshots/ from beside
 // this file to /output and writes /output/dossier.json with the vendored
 // make.fun library. (Node 22, standard library only.)
 //

@@ -42,3 +42,16 @@ export function angleDelta(from, to) {
 export function distance(x1, y1, x2, y2) {
   return Math.hypot(x2 - x1, y2 - y1);
 }
+
+// Exponential smoothing: move `current` toward `target` at `lambda` per
+// second. The 3D chase camera uses it so the view glides instead of
+// snapping when the player turns.
+export function damp(current, target, lambda, dt) {
+  return current + (target - current) * (1 - Math.exp(-lambda * dt));
+}
+
+// Shortest signed turn from angle `from` toward angle `to`, as a lerp
+// factor: lerpAngle(a, b, t) turns a toward b by t (0..1) the short way.
+export function lerpAngle(a, b, t) {
+  return a + angleDelta(a, b) * t;
+}

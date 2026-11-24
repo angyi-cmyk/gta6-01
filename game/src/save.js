@@ -1,6 +1,6 @@
 // Save and load through localStorage. One job: remember the player's money,
 // story progress and position between sessions.
-const SAVE_KEY = 'solmar-heat-save-v1';
+const SAVE_KEY = 'neon-bay-nights-save-v1';
 
 export function saveGame(state) {
   try {

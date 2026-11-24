@@ -2,18 +2,22 @@
 [![rank](https://make.fun/badge/gta6-01/angyi-cmyk/gta6-01/rank.svg)](https://make.fun/bounty/gta6-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
 [![reward](https://make.fun/badge/gta6-01/angyi-cmyk/gta6-01/reward.svg)](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
 
-# Solmar Heat
+# Neon Bay Nights
 
-An open-world crime game in the browser — a complete original city to explore
-on foot and by car, built for [make.fun's GTA 6 bounty](https://make.fun/bounty/gta6-01).
+A 3D open-world crime game in the browser — a complete original neon city
+to explore on foot and by car, built for [make.fun's GTA 6 bounty](https://make.fun/bounty/gta6-01).
+The city renders in real 3D (Three.js, vendored offline under
+`game/vendor/`, no network at runtime): a chase camera follows your car
+through wet neon streets, and a high over-shoulder camera follows you on
+foot, past lit towers, the Casino Strip and the NEON BAY arch.
 
-You are Rex Marlowe, a driver-for-hire in Solmar, a sun-soaked coastal city.
-Steal cars, outrun the police, and run ten jobs for the fixer Delia Voss:
-lift a Comet GT from the Marina, move a package through the Port, take the
-ledger from Solmar Tower — then steal the Falcon X, haul a crate across town,
-lose a three-star tail, win a street race, break a police blockade, collect
-the crew's cut — and finish with the Big One: the Golden Palms Casino vault
-on the Casino Strip.
+You are Rex Marlowe, a driver-for-hire in Neon Bay, a neon casino city
+that never sleeps. Steal cars, outrun the police, and run ten jobs for
+the fixer Delia Voss: lift a Comet GT from the Marina, move a package
+through the Port, take the ledger from Neon Tower — then steal the
+Falcon X, haul a crate across town, lose a three-star tail, win a street
+race, break a police blockade, collect the crew's cut — and finish with
+the Big One: the Golden Palms Casino vault on the Casino Strip.
 
 ## Play
 
@@ -32,8 +36,11 @@ node serve.ts   # serves game/ on http://localhost:8080
 
 ## What is in the game
 
-- A 3.6 km² city: grid streets, downtown towers, a neon Casino Strip with
-  the Golden Palms Casino, a park, a port container yard, a beach and the sea.
+- A 3.6 km² neon city at night: grid streets with wet, reflecting
+  asphalt, downtown towers with lit windows, a neon Casino Strip with
+  the Golden Palms Casino, a park, a port container yard, a beach and
+  the sea — all in 3D, with a chase camera while driving and an
+  over-shoulder camera on foot.
 - Traffic that drives the roads and pedestrians who walk the sidewalks and
   flee from danger.
 - Car stealing, arcade driving with drift, and a wanted level (0–5 stars)
@@ -82,11 +89,15 @@ node serve.ts   # serves game/ on http://localhost:8080
 | `standing.js` | District standing: reputation and levels |
 | `race.js` | Street racing: checkpoints, clock, best time |
 | `crew.js` | The crew roster and what each member is worth |
-| `render.js` | Drawing the world |
+| `render.js` | 3D rendering: Three.js chase camera, city, cars, people, effects |
 | `hud.js` | HUD, minimap and menus |
 | `save.js` | localStorage save / load |
 | `shots.js` | Deterministic screenshot scenes (`?shot=`) |
 | `main.js` | Game loop and screen machine |
+
+Three.js r160 is vendored offline at `game/vendor/three.module.min.js` and
+loaded through an import map in `game/index.html` — the game makes no
+network request at runtime.
 
 `main.ts` at the repo root copies `game/` and `screenshots/` to `/output` and
 writes `/output/dossier.json` with the vendored make.fun library.

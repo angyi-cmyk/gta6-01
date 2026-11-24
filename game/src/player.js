@@ -20,6 +20,7 @@ export function makePlayer(x, y) {
     hurtFlash: 0,
     carsStolen: 0,
     missionsDone: 0,
+    walkPhase: 0, // walk-cycle phase, advanced on foot; the 3D figure bobs on it
   };
 }
 
@@ -39,7 +40,10 @@ export function updateOnFoot(player, move, dt, running) {
   player.x += targetX * dt;
   player.y += targetY * dt;
   player.speed = Math.hypot(targetX, targetY);
-  if (player.speed > 4) player.angle = Math.atan2(targetY, targetX);
+  if (player.speed > 4) {
+    player.angle = Math.atan2(targetY, targetX);
+    player.walkPhase = (player.walkPhase || 0) + player.speed * dt * 0.045;
+  }
   const solved = resolveSolid(player.x, player.y, PLAYER.radius);
   player.x = solved.x;
   player.y = solved.y;

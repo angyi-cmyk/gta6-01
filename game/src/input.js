@@ -71,3 +71,13 @@ export function moveVector() {
   const length = Math.hypot(x, y);
   return { x: x / length, y: y / length };
 }
+
+// The mouse position as WebGL clip coordinates (-1..1, y up) on a canvas of
+// the given size. The 3D renderer unprojects this into a ground point so
+// aiming on foot points at the cursor.
+export function mouseNdc(canvasWidth, canvasHeight) {
+  return {
+    x: (input.mouseX / canvasWidth) * 2 - 1,
+    y: -(input.mouseY / canvasHeight) * 2 + 1,
+  };
+}

@@ -31,6 +31,27 @@ export function addSkid(state, x, y, angle) {
   if (state.particles.skids.length > 220) state.particles.skids.shift();
 }
 
+// A short muzzle flash: three sparks thrown forward from the gun, gone in
+// a blink. The 3D renderer draws them as a bright point burst.
+export function addMuzzleFlash(state, x, y, angle) {
+  const rng = state.rng;
+  for (let i = 0; i < 3; i += 1) {
+    const spread = range(rng, -0.25, 0.25);
+    const speed = range(rng, 120, 260);
+    const p = {
+      kind: 'spark',
+      x, y,
+      vx: Math.cos(angle + spread) * speed,
+      vy: Math.sin(angle + spread) * speed,
+      life: range(rng, 0.06, 0.12),
+      maxLife: 0.12,
+      size: range(rng, 4, 7),
+      color: pick(rng, ['#fff2a8', '#ffd23d', '#ff9a3d']),
+    };
+    state.particles.list.push(p);
+  }
+}
+
 export function updateParticles(state, dt) {
   const list = state.particles.list;
   for (let i = list.length - 1; i >= 0; i -= 1) {

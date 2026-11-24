@@ -7,7 +7,7 @@ import { hasSave } from './save.js';
 import { STORY, MISSION_COUNT } from './missions.js';
 import { standingLevel, topDistrict } from './standing.js';
 import { formatRaceTime, RACE_START } from './race.js';
-import { crewNames } from './crew.js';
+import { crewSummary } from './crew.js';
 
 const MINIMAP_SIZE = 168;
 const MINIMAP_X = 14;
@@ -115,18 +115,25 @@ export function drawHud(ctx, state) {
   ctx.font = '13px system-ui, sans-serif';
   ctx.fillText(player.weapon === 'pistol' ? 'PISTOL  •  click to shoot' : 'FISTS  •  click to punch', 24, 88);
   // Reputation and crew: what the street thinks of Rex, and who rides
-  // with him. Shown under the cash so a screenshot carries them.
+  // with him. Shown under the cash so a screenshot carries them. The lines
+  // sit on one dark backing so they read over bright windows at night.
+  const repText = state.standing ? `REP ${state.standing.rep}  •  LV ${standingLevel(state.standing)}  •  Top turf: ${topDistrict(state.standing).name}` : '';
+  const crewText = `CREW: ${crewSummary(state).join('  •  ')}`;
+  if (state.standing || crewSummary(state).length > 0) {
+    ctx.font = 'bold 13px system-ui, sans-serif';
+    const backW = Math.max(ctx.measureText(repText).width, ctx.measureText(crewText).width) + 20;
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(14, 96, backW, 38);
+  }
   if (state.standing) {
-    const top = topDistrict(state.standing);
     ctx.fillStyle = '#ffd23d';
     ctx.font = 'bold 13px system-ui, sans-serif';
-    ctx.fillText(`REP ${state.standing.rep}  •  LV ${standingLevel(state.standing)}  •  Top turf: ${top.name}`, 24, 108);
+    ctx.fillText(repText, 24, 108);
   }
-  const crew = crewNames(state);
-  if (crew.length > 0) {
-    ctx.fillStyle = '#b06fd8';
+  if (crewSummary(state).length > 0) {
+    ctx.fillStyle = '#d8a8f0';
     ctx.font = 'bold 13px system-ui, sans-serif';
-    ctx.fillText(`CREW: ${crew.join('  •  ')}`, 24, 126);
+    ctx.fillText(crewText, 24, 126);
   }
   // Wanted stars, top right.
   drawStars(ctx, state.wanted.stars, VIEW.width - 170, 40);
@@ -183,9 +190,10 @@ export function drawHud(ctx, state) {
     ctx.fillText(text, VIEW.width / 2, 75);
     ctx.textAlign = 'left';
   }
-  // Dispatch radio: red, under the banner (or under the race clock).
+  // Dispatch radio: red, under the banner (or clear of the race clock and
+  // the crew line while a race runs).
   if (state.dispatch && state.dispatch.line) {
-    const y = state.race && state.race.active ? 96 : 58;
+    const y = state.race && state.race.active ? 132 : 58;
     ctx.font = 'bold 15px system-ui, sans-serif';
     const width = ctx.measureText(state.dispatch.line).width + 28;
     ctx.fillStyle = 'rgba(60,0,0,0.75)';
@@ -195,16 +203,15 @@ export function drawHud(ctx, state) {
     ctx.fillText(state.dispatch.line, VIEW.width / 2, y + 21);
     ctx.textAlign = 'left';
   }
-  // Off-screen target arrow: point at the mission target from the screen edge.
-  if (state.missions.target) {
-    const camera = state.camera;
+  // Off-screen target arrow: project the mission target through the 3D
+  // camera and point at it from the screen edge when it is out of frame.
+  if (state.missions.target && state.projectToScreen) {
     const t = state.missions.target;
-    const sx = t.x - camera.x;
-    const sy = t.y - camera.y;
-    if (sx < 0 || sx > VIEW.width || sy < 0 || sy > VIEW.height) {
+    const p = state.projectToScreen(t.x, t.y);
+    if (p && (p.x < 0 || p.x > VIEW.width || p.y < 0 || p.y > VIEW.height)) {
       const cx = VIEW.width / 2;
       const cy = VIEW.height / 2;
-      const angle = Math.atan2(sy - cy, sx - cx);
+      const angle = Math.atan2(p.y - cy, p.x - cx);
       const ax = cx + Math.cos(angle) * (VIEW.width / 2 - 60);
       const ay = cy + Math.sin(angle) * (VIEW.height / 2 - 60);
       ctx.save();
@@ -275,31 +282,47 @@ function wrapText(ctx, text, maxWidth) {
 
 export function drawTitle(ctx, state, saveAvailable) {
   ctx.save();
-  ctx.fillStyle = '#0e1a24';
+  ctx.fillStyle = '#070714';
   ctx.fillRect(0, 0, VIEW.width, VIEW.height);
-  // Sun-soaked gradient sky and a skyline silhouette.
+  // Neon-night gradient sky and a skyline silhouette with lit windows.
   const gradient = ctx.createLinearGradient(0, 0, 0, VIEW.height);
-  gradient.addColorStop(0, '#ff9a5c');
-  gradient.addColorStop(0.45, '#f2c14e');
-  gradient.addColorStop(1, '#2f8fae');
+  gradient.addColorStop(0, '#160b2e');
+  gradient.addColorStop(0.45, '#3d1157');
+  gradient.addColorStop(0.75, '#ff2d78');
+  gradient.addColorStop(1, '#0b0b1e');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, VIEW.width, 380);
-  ctx.fillStyle = '#1c2a38';
+  ctx.fillStyle = '#0b0b1e';
   const buildings = [120, 220, 160, 300, 200, 260, 180, 320, 150, 240, 190];
   let bx = 0;
   for (const h of buildings) {
     ctx.fillRect(bx, 380 - h, 116, h);
     bx += 116;
   }
-  ctx.fillStyle = '#0e1a24';
+  // Lit windows in the skyline.
+  const windowColors = ['#ffd23d', '#ff2d78', '#2de8ff', '#ffe9b0'];
+  for (let i = 0; i < 90; i += 1) {
+    ctx.fillStyle = windowColors[i % windowColors.length];
+    ctx.globalAlpha = 0.5 + ((i * 37) % 50) / 100;
+    ctx.fillRect(12 + ((i * 53) % 1240), 90 + ((i * 91) % 260), 8, 10);
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = '#070714';
   ctx.fillRect(0, 380, VIEW.width, VIEW.height - 380);
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 84px system-ui, sans-serif';
-  ctx.fillText('SOLMAR HEAT', VIEW.width / 2, 200);
+  ctx.shadowColor = '#ff2d78';
+  ctx.shadowBlur = 32;
+  ctx.fillStyle = '#ff5c9d';
+  ctx.font = 'bold 76px system-ui, sans-serif';
+  ctx.fillText('NEON BAY', VIEW.width / 2, 170);
+  ctx.shadowColor = '#2de8ff';
+  ctx.fillStyle = '#2de8ff';
+  ctx.font = 'bold 76px system-ui, sans-serif';
+  ctx.fillText('NIGHTS', VIEW.width / 2, 250);
+  ctx.shadowBlur = 0;
   ctx.font = '22px system-ui, sans-serif';
   ctx.fillStyle = '#ffe9a8';
-  ctx.fillText('Ten jobs. Street races. District standing. A crew that has your back.', VIEW.width / 2, 244);
+  ctx.fillText('Ten jobs. Street races. District standing. A crew that has your back.', VIEW.width / 2, 300);
   ctx.font = '16px system-ui, sans-serif';
   ctx.fillStyle = '#cfe8f2';
   const menu = saveAvailable
@@ -324,7 +347,7 @@ export function drawHowToPlay(ctx) {
   ctx.fillStyle = '#fff';
   ctx.font = '18px system-ui, sans-serif';
   const lines = [
-    'You are Rex Marlowe, a driver-for-hire in the coastal city of Solmar.',
+    'You are Rex Marlowe, a driver-for-hire in the neon city of Neon Bay.',
     '',
     'WASD / arrows — move on foot, drive when in a car',
     'Mouse — aim. Click — punch, or shoot when you carry a pistol.',

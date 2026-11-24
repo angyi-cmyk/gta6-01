@@ -104,6 +104,12 @@ export function playPhone() {
   setTimeout(() => tone(1200, 0.09, 'sine', 0.2), 140);
 }
 
+// A bright two-note chime when the player banks a race checkpoint.
+export function playCheckpoint() {
+  tone(988, 0.09, 'triangle', 0.3);
+  setTimeout(() => tone(1319, 0.14, 'triangle', 0.3), 90);
+}
+
 // A continuous engine hum whose pitch follows the player's speed (0..1).
 export function updateEngine(speedRatio, driving) {
   if (!ctx || muted) return;

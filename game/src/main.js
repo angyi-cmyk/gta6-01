@@ -1,4 +1,4 @@
-// Solmar Heat: the game loop, the screens and the wiring between systems.
+// Neon Bay Nights: the game loop, the screens and the wiring between systems.
 // One job: own the state and step it every frame.
 // The import order is the dossier's outline order (vendor/makefun-game.ts
 // importOrder: index.html, then main.js, then its static imports depth
@@ -13,20 +13,30 @@ import { VIEW, WORLD, PLAYER, CAR, MISSIONS, WANTED } from './config.js';
 import { makeRng, distance, clamp, angleDelta } from './random.js';
 import { CITY, randomRoadPoint, resolveSolid } from './city.js';
 import { input, attachInput, endFrame, wasPressed, moveVector } from './input.js';
-import { makePlayer, updateOnFoot, updateDriving, updateAim, nearestStealableCar, enterCar, exitCar, attack } from './player.js';
+import { makePlayer, updateOnFoot, updateDriving, nearestStealableCar, enterCar, exitCar, attack } from './player.js';
 import { makeCar, spawnTraffic, updateTrafficCar, collideCars, topUpTraffic, isDrivable } from './vehicles.js';
 import { spawnPedestrians, updatePedestrian, scarePedestrians } from './pedestrians.js';
-import { makeParticles, addParticles, addSkid, updateParticles } from './particles.js';
+import { makeParticles, addParticles, addSkid, addMuzzleFlash, updateParticles } from './particles.js';
 import { makeWanted, addWanted, balancePolice, decayWanted, checkBusted, updatePoliceCar } from './police.js';
 import { updateBullets, resolvePunch, enemyShoot, hurtPlayer, carHitsPedestrian } from './combat.js';
-import { makeCamera, updateCamera, drawWorld } from './render.js';
+import { makeCamera, updateCamera, drawWorld, initRenderer, screenToGround, projectToScreen } from './render.js';
 import { drawHud, drawTitle, drawHowToPlay, drawPause, drawEndScreen } from './hud.js';
 import { saveGame, loadSave, hasSave } from './save.js';
 import { initAudio, setMuted, isMuted, updateEngine, updateSiren, playCrash, playPickup, playGunshot } from './audio.js';
 import { stageShot } from './shots.js';
 
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
+// Two stacked canvases: WebGL (the 3D city) below, a 2D canvas (the HUD and
+// menus) above it. Input listens on the WebGL canvas; the HUD canvas lets
+// pointer events fall through to it.
+const glCanvas = document.getElementById('gl');
+const hudCanvas = document.getElementById('hud');
+const ctx = hudCanvas.getContext('2d');
+const rendererOK = initRenderer(glCanvas);
+if (!rendererOK) {
+  // The game still runs — the HUD draws, the logic steps — but the city
+  // cannot render without WebGL. The error is on the window for diagnosis.
+  console.error('Neon Bay Nights: WebGL unavailable', window.__webglError);
+}
 
 export function createState(seed = 20261121) {
   const rng = makeRng(seed);
@@ -58,6 +68,10 @@ export function createState(seed = 20261121) {
   state.addParticles = (kind, x, y, count) => addParticles(state, kind, x, y, count);
   state.saveGame = () => saveGame(state);
   state.missions.onGuardDown = (s) => onGuardDown(s);
+  // The HUD projects mission targets through the 3D camera for its
+  // off-screen arrow; the function lives on the state so hud.js needs no
+  // import of the renderer.
+  state.projectToScreen = projectToScreen;
   spawnTraffic(state, 26);
   spawnPedestrians(state, 42);
   // A few parked cars the player can steal right away.
@@ -70,6 +84,10 @@ export function createState(seed = 20261121) {
 }
 
 let state = createState();
+
+// Debug/test handle: the live game state, for automation and screenshots.
+// Read-only by convention; the game never reads it back.
+Object.defineProperty(window, '__gameState', { get: () => state });
 
 function applySave(save) {
   state.player.money = save.money;
@@ -155,7 +173,9 @@ function updatePlay(dt) {
   const player = state.player;
   state.time += dt;
   const move = moveVector();
-  updateAim(player, state.camera, input.mouseX, input.mouseY);
+  // Aim on foot: unproject the mouse through the 3D camera onto the street.
+  const ground = screenToGround();
+  if (ground) player.aimAngle = Math.atan2(ground.y - player.y, ground.x - player.x);
 
   // Enter / exit a car.
   if (wasPressed('KeyE')) {
@@ -176,8 +196,10 @@ function updatePlay(dt) {
   // Attack with mouse click.
   if (input.clicked && player.onFoot) {
     const result = attack(player, state);
-    if (result && result !== 'punch') state.bullets.push(result);
-    else if (result === 'punch') resolvePunch(state, player);
+    if (result && result !== 'punch') {
+      state.bullets.push(result);
+      addMuzzleFlash(state, player.x + Math.cos(player.aimAngle) * 20, player.y + Math.sin(player.aimAngle) * 20, player.aimAngle);
+    } else if (result === 'punch') resolvePunch(state, player);
   }
 
   // Move the player or drive the car.
@@ -281,7 +303,7 @@ function updatePlay(dt) {
 
   // Traffic top-up and camera.
   topUpTraffic(state);
-  updateCamera(state.camera, player.x, player.y, dt);
+  updateCamera(state.camera, state, dt);
 
   // Sound follows the action.
   const driving = !player.onFoot && player.car;
@@ -298,25 +320,27 @@ function updatePlay(dt) {
 }
 
 function draw() {
+  // The 3D city renders to the WebGL canvas; the HUD and menus draw on the
+  // 2D canvas above it. Title and how-to paint their own opaque screens.
   ctx.clearRect(0, 0, VIEW.width, VIEW.height);
   if (state.screen === 'title') {
     drawTitle(ctx, state, hasSave());
   } else if (state.screen === 'howto') {
     drawHowToPlay(ctx);
   } else if (state.screen === 'pause') {
-    drawWorld(ctx, state, state.camera);
+    drawWorld(state, state.camera);
     drawHud(ctx, state);
     drawPause(ctx);
   } else if (state.screen === 'wasted') {
-    drawWorld(ctx, state, state.camera);
+    drawWorld(state, state.camera);
     drawHud(ctx, state);
-    drawEndScreen(ctx, 'WASTED', 'The clinic patched you up. Solmar still owes you nothing.', `You lost 20% of your cash. $${state.player.money.toLocaleString('en-US')} left.`);
+    drawEndScreen(ctx, 'WASTED', 'The clinic patched you up. Neon Bay still owes you nothing.', `You lost 20% of your cash. $${state.player.money.toLocaleString('en-US')} left.`);
   } else if (state.screen === 'busted') {
-    drawWorld(ctx, state, state.camera);
+    drawWorld(state, state.camera);
     drawHud(ctx, state);
     drawEndScreen(ctx, 'BUSTED', 'The cops booked you and took their cut.', `You lost 30% of your cash. $${state.player.money.toLocaleString('en-US')} left.`);
   } else {
-    drawWorld(ctx, state, state.camera);
+    drawWorld(state, state.camera);
     drawHud(ctx, state);
   }
 }
@@ -388,13 +412,13 @@ function frame(timestamp) {
 const params = new URLSearchParams(window.location.search);
 const shotName = params.get('shot');
 if (shotName) {
-  attachInput(canvas);
+  attachInput(glCanvas);
   state = stageShot(shotName, state);
   state.screen = 'play';
   window.__shotState = state;
   draw();
   window.__shotReady = true;
 } else {
-  attachInput(canvas);
+  attachInput(glCanvas);
   requestAnimationFrame(frame);
 }

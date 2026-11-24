@@ -12,6 +12,9 @@ import { wreckCar } from './vehicles.js';
 // Step every bullet; walls stop them, cars and people take the hit.
 export function updateBullets(state, dt) {
   const bullets = state.bullets;
+  // A firefight can spray bullets faster than the renderer can draw them:
+  // cap the flight so a long shootout stays cheap to step and to draw.
+  if (bullets.length > 160) bullets.splice(0, bullets.length - 160);
   for (let i = bullets.length - 1; i >= 0; i -= 1) {
     const b = bullets[i];
     b.x += b.vx * dt;

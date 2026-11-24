@@ -1,4 +1,4 @@
-// The city of Solmar: a static layout of roads, blocks, buildings, a park, a
+// The city of Neon Bay: a static layout of roads, blocks, buildings, a park, a
 // beach and a port. One job: answer where things are and what blocks movement.
 import { WORLD, PALETTE } from './config.js';
 import { makeRng, pick, range, rangeInt, clamp } from './random.js';
@@ -121,7 +121,7 @@ function buildCity(seed) {
     { x: 1880, y: 2110, w: 64, h: 140, roof: '#e8c832', wall: '#b06fd8', tall: false, name: null },
   );
   const tower = buildings.reduce((best, b) => (b.tall && !b.name && (!best || b.w * b.h > best.w * best.h) ? b : best), null);
-  if (tower) tower.name = 'Solmar Tower';
+  if (tower) tower.name = 'Neon Tower';
   const marina = { x: 2900, y: 3180, name: 'Marina' };
   const stadium = { x: 600, y: 2600, name: 'Stadium' };
   return { buildings, trees, containers, tower, marina, stadium };
@@ -139,6 +139,19 @@ export const CASINO_STRIP = {
   entrance: { x: 1800, y: 2055 }, // on the road north of the strip
   label: { x: 1800, y: 2095 }, // CASINO STRIP map label, above the fronts
 };
+
+// Neon signs the 3D renderer stands up in the world: the strip's casino
+// fronts and the big NEON BAY arch over the beach road. Each sign is a
+// glowing panel with its text, colour and the angle it faces. Casino fronts
+// face north, toward the road; the beach-road signs face west, toward the
+// eastbound traffic and a chase camera behind it.
+export const NEON_SIGNS = [
+  { x: 1705, y: 2104, w: 96, h: 34, text: 'GOLDEN PALMS', color: '#ffd23d', angle: -Math.PI / 2 },
+  { x: 1815, y: 2104, w: 96, h: 30, text: 'NEON BAY', color: '#ff2d78', angle: -Math.PI / 2 },
+  { x: 1912, y: 2104, w: 70, h: 30, text: 'JACKPOT', color: '#2de8ff', angle: -Math.PI / 2 },
+  { x: 2250, y: 3375, w: 220, h: 46, text: 'NEON BAY', color: '#ff2d78', angle: Math.PI },
+  { x: 1125, y: 3375, w: 150, h: 36, text: 'CASINO STRIP', color: '#ffd23d', angle: Math.PI },
+];
 
 // Beach and water: the strip below the last road line.
 export const BEACH_TOP = ROAD_LINES[ROAD_LINES.length - 1] + ROAD_HALF;

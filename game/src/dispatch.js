@@ -19,7 +19,8 @@ function roadblockPoint(state, ahead) {
 }
 
 // Park two cruisers across the road at the intersection ahead and put the
-// call on the radio. Returns the two cars.
+// call on the radio. Returns the two cars. At five stars dispatch closes
+// the trap harder: three cruisers, nose to tail across the whole road.
 export function spawnRoadblock(state, ahead = 480) {
   const dispatch = state.dispatch;
   const point = roadblockPoint(state, ahead);
@@ -27,8 +28,9 @@ export function spawnRoadblock(state, ahead = 480) {
   // Across the road the player is travelling on: a driver heading east
   // meets two cars parked nose-to-south, one on each side of the line.
   const horizontal = Math.abs(Math.cos(state.player.angle)) >= Math.abs(Math.sin(state.player.angle));
+  const offsets = (state.wanted && state.wanted.stars >= 5) ? [-42, 0, 42] : [-30, 30];
   const cars = [];
-  for (const offset of [-30, 30]) {
+  for (const offset of offsets) {
     const car = makeCar(
       horizontal ? point.x : point.x + offset,
       horizontal ? point.y + offset : point.y,

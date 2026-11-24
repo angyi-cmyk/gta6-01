@@ -29,6 +29,12 @@ export function wantedCarCount(stars) {
   return stars === 0 ? 0 : Math.min(POLICE.maxCars, stars + (stars >= 3 ? 1 : 0));
 }
 
+// The police light bar flashes red / blue twice a second. The 3D renderer
+// asks which side is lit this frame; 0 is red, 1 is blue.
+export function policeLightPhase(state) {
+  return Math.floor(state.time * 4) % 2;
+}
+
 // Spawn a police cruiser on a road away from the player.
 export function spawnPoliceCar(state) {
   const rng = state.rng;

@@ -1,5 +1,5 @@
 // Missions and story. One job: run the ten-job arc for Rex Marlowe, a
-// driver-for-hire in Solmar, and tell the HUD what to show.
+// driver-for-hire in Neon Bay, and tell the HUD what to show.
 import { MISSIONS, PALETTE } from './config.js';
 import { makeRng, distance, range } from './random.js';
 import { CITY, CASINO_STRIP, randomRoadPoint } from './city.js';
@@ -11,24 +11,24 @@ import { startStreetRace, RACE_COURSE } from './race.js';
 import { joinCrew, hasCrew, CREW } from './crew.js';
 
 // Delia Voss, the fixer, hires Rex. Kane Rourke runs the docks and has been
-// leaning on every driver in Solmar. Ten jobs: the first three break Rourke,
+// leaning on every driver in Neon Bay. Ten jobs: the first three break Rourke,
 // the rest are the fallout — and the crew Rex builds along the way. The
 // tenth is the Big One: the Golden Palms Casino vault.
 export const STORY = {
-  intro: 'Solmar. Sun, salt and stolen cars. You are Rex Marlowe, a driver with no licence and a fast reputation. Delia Voss has work for you.',
+  intro: 'Neon Bay. Neon, noise and stolen cars. You are Rex Marlowe, a driver with no licence and a fast reputation. Delia Voss has work for you.',
   briefs: [
     'Job 1 — Wheels Up: a yellow Comet GT is parked at the Marina. Take it. Deliver it to the garage on the east side. No police, no fuss.',
-    'Job 2 — The Drop: pick up the package at the Port warehouse, then deliver it to the bench in Solmar Park. Rourke\'s men will not let it go quietly.',
-    'Job 3 — The Ledger: Rourke keeps his books in Solmar Tower. Get past his guards, take the ledger, and bring it to the safehouse. Finish this.',
-    'Job 4 — Hot Wheels: a purple Falcon X is parked at the Stadium. It is the rarest car in Solmar. Take it to the garage — and meet Milo, the mechanic who keeps it running.',
-    'Job 5 — The Long Haul: a crate is waiting in the Port container yard. Carry it across town to the Grand Solmar Hotel. Rourke\'s men still watch the docks.',
+    'Job 2 — The Drop: pick up the package at the Port warehouse, then deliver it to the bench in Neon Park. Rourke\'s men will not let it go quietly.',
+    'Job 3 — The Ledger: Rourke keeps his books in Neon Tower. Get past his guards, take the ledger, and bring it to the safehouse. Finish this.',
+    'Job 4 — Hot Wheels: a purple Falcon X is parked at the Stadium. It is the rarest car in Neon Bay. Take it to the garage — and meet Milo, the mechanic who keeps it running.',
+    'Job 5 — The Long Haul: a crate is waiting in the Port container yard. Carry it across town to the Grand Neon Hotel. Rourke\'s men still watch the docks.',
     'Job 6 — Lose the Tail: Delia tipped the cops and now they are all over you. Lose them — get your wanted level to zero — then reach the hideout.',
     'Job 7 — Street Kings: the beach crew runs a race through the city. Four checkpoints, beat the clock, and Vera the wheelwoman will owe you one.',
     'Job 8 — The Blockade: Rourke\'s last men hold the Port yard and the evidence that buries them. Fight through, grab it, and run it to the safehouse.',
     'Job 9 — The Crew\'s Cut: three cash drops are stashed around the city — Marina, Park, Stadium. Collect them all and bring the take to the garage.',
-    'Job 10 — The Big One: the Golden Palms Casino vault on the Casino Strip holds the biggest score in Solmar. Get past the guards, grab the vault cash, and lose a five-star tail to the safehouse.',
+    'Job 10 — The Big One: the Golden Palms Casino vault on the Casino Strip holds the biggest score in Neon Bay. Get past the guards, grab the vault cash, and lose a five-star tail to the safehouse.',
   ],
-  done: 'Ten jobs. Rourke is finished, the crew is yours, and every driver in Solmar owes you one. Free roam — the city is yours now, and the beach race line is always open.',
+  done: 'Ten jobs. Rourke is finished, the crew is yours, and every driver in Neon Bay owes you one. Free roam — the city is yours now, and the beach race line is always open.',
 };
 
 export const MISSION_COUNT = 10;
@@ -84,9 +84,9 @@ export function missionSpots() {
 // The four casino guards on the Big One: posts around the vault plaza,
 // clear of the casino fronts so nobody spawns inside a wall.
 const CASINO_GUARDS = [
-  { x: 1680, y: 2340 },
-  { x: 1920, y: 2340 },
-  { x: 1800, y: 2400 },
+  { x: 1720, y: 2340 },
+  { x: 1880, y: 2340 },
+  { x: 1860, y: 2400 },
   { x: 1985, y: 2200 },
 ];
 
@@ -119,7 +119,7 @@ function startMission(state, index) {
   } else if (index === 1) {
     missions.objective = 'Pick up the package at the Port warehouse';
     missions.target = { x: spots.portPickup.x, y: spots.portPickup.y, label: 'Package' };
-    say(missions, 'Delia: "Rourke\'s boys move a package through the Port tonight. Grab it before they do, then bring it to the bench in Solmar Park."');
+    say(missions, 'Delia: "Rourke\'s boys move a package through the Port tonight. Grab it before they do, then bring it to the bench in Neon Park."');
   } else if (index === 2) {
     // Four armed guards hold the tower entrance.
     const tower = spots.tower;
@@ -139,11 +139,11 @@ function startMission(state, index) {
     }
     state.guards = guards;
     missions.guards = guards;
-    missions.objective = 'Fight past Rourke\'s guards at Solmar Tower';
-    missions.target = { x: tower.x, y: tower.y, label: 'Solmar Tower' };
-    say(missions, 'Delia: "Last one, Rex. Rourke\'s ledger is in Solmar Tower. Four of his men guard the door. Take the ledger and meet me at the safehouse."');
+    missions.objective = 'Fight past Rourke\'s guards at Neon Tower';
+    missions.target = { x: tower.x, y: tower.y, label: 'Neon Tower' };
+    say(missions, 'Delia: "Last one, Rex. Rourke\'s ledger is in Neon Tower. Four of his men guard the door. Take the ledger and meet me at the safehouse."');
   } else if (index === 3) {
-    // A purple Falcon X waits at the Stadium — the rarest car in Solmar.
+    // A purple Falcon X waits at the Stadium — the rarest car in Neon Bay.
     const car = makeCar(spots.stadiumCar.x, spots.stadiumCar.y, Math.PI / 2, {
       type: 'mission', driver: 'none', color: '#8a6f8e', topSpeed: 450,
     });
@@ -151,11 +151,11 @@ function startMission(state, index) {
     missions.markerCar = car;
     missions.objective = 'Steal the purple Falcon X at the Stadium';
     missions.target = { x: spots.stadiumCar.x, y: spots.stadiumCar.y, label: 'Falcon X' };
-    say(missions, 'Delia: "Rourke\'s gone but his toys are still out there. A purple Falcon X is parked at the Stadium — the rarest car in Solmar. Bring it to the garage."');
+    say(missions, 'Delia: "Rourke\'s gone but his toys are still out there. A purple Falcon X is parked at the Stadium — the rarest car in Neon Bay. Bring it to the garage."');
   } else if (index === 4) {
     missions.objective = 'Pick up the crate at the Port container yard';
     missions.target = { x: spots.portYard.x, y: spots.portYard.y, label: 'Crate' };
-    say(missions, 'Delia: "A crate is sitting in the Port yard and it is worth more than the car you stole. Grab it, cross town, and drop it at the Grand Solmar Hotel."');
+    say(missions, 'Delia: "A crate is sitting in the Port yard and it is worth more than the car you stole. Grab it, cross town, and drop it at the Grand Neon Hotel."');
   } else if (index === 5) {
     // The cops are already on Rex: lose them, then reach the hideout.
     addWanted(state, 3, 'Delia tipped the cops — now lose them');
@@ -200,7 +200,7 @@ function startMission(state, index) {
     // The Big One: reach the Casino Strip first; the guards come next.
     missions.objective = 'Reach the Casino Strip — the Big One starts at Golden Palms';
     missions.target = { x: spots.casinoEntrance.x, y: spots.casinoEntrance.y, label: 'Casino Strip' };
-    say(missions, 'Delia: "The Big One, Rex. The Golden Palms vault holds the biggest score in Solmar. Get to the Casino Strip — and bring the pistol."', 6);
+    say(missions, 'Delia: "The Big One, Rex. The Golden Palms vault holds the biggest score in Neon Bay. Get to the Casino Strip — and bring the pistol."', 6);
   }
 }
 
@@ -319,7 +319,7 @@ export function updateMissions(state, dt) {
       if (player.onFoot && distance(player.x, player.y, spots.portPickup.x, spots.portPickup.y) < 60) {
         missions.stage = 1;
         missions.packageHeld = true;
-        missions.objective = 'Deliver the package to the bench in Solmar Park';
+        missions.objective = 'Deliver the package to the bench in Neon Park';
         missions.target = { x: spots.parkBench.x, y: spots.parkBench.y, label: 'Park bench' };
         playPickup();
         addWanted(state, 2, 'Rourke\'s men called the police');
@@ -364,7 +364,7 @@ export function updateMissions(state, dt) {
       if (player.onFoot && distance(player.x, player.y, spots.portYard.x, spots.portYard.y) < 60) {
         missions.stage = 1;
         missions.packageHeld = true;
-        missions.objective = 'Deliver the crate to the Grand Solmar Hotel';
+        missions.objective = 'Deliver the crate to the Grand Neon Hotel';
         missions.target = { x: spots.hotel.x, y: spots.hotel.y, label: 'Hotel' };
         playPickup();
         addWanted(state, 2, 'Rourke\'s men called the police');
@@ -480,7 +480,7 @@ export function updateMissions(state, dt) {
         missions.target = { x: spots.safehouse.x, y: spots.safehouse.y, label: 'Safehouse' };
         playPickup();
         addWanted(state, 5, 'the casino vault alarm went off');
-        say(missions, 'Delia: "Vault cash is yours — and every cop in Solmar is rolling. Five stars. Get to the safehouse."', 6);
+        say(missions, 'Delia: "Vault cash is yours — and every cop in Neon Bay is rolling. Five stars. Get to the safehouse."', 6);
       }
     } else if (missions.stage === 3 && distance(px, py, spots.safehouse.x, spots.safehouse.y) < 110) {
       missions.cashHeld = false;

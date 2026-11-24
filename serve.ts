@@ -43,4 +43,4 @@ createServer((request, response) => {
   }
   response.writeHead(200, { 'Content-Type': MIME[extname(target)] || 'application/octet-stream' });
   createReadStream(target).pipe(response);
-}).listen(port, () => console.log(`Solmar Heat at http://localhost:${port}`));
+}).listen(port, () => console.log(`Neon Bay Nights at http://localhost:${port}`));

@@ -6,7 +6,7 @@ export const DISTRICTS = {
   marina: 'Marina',
   downtown: 'Downtown',
   port: 'Port',
-  park: 'Solmar Park',
+  park: 'Neon Park',
   beach: 'Beach',
   uptown: 'Uptown',
   westside: 'Westside',

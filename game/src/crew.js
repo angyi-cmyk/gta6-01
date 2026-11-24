@@ -38,3 +38,10 @@ export function crewNames(state) {
   if (!state.crew) return [];
   return state.crew.joined.map((id) => CREW[id].name);
 }
+
+// The crew line the HUD prints: names with their street roles, so a
+// screenshot shows what each member is worth, not just who is in.
+export function crewSummary(state) {
+  if (!state.crew) return [];
+  return state.crew.joined.map((id) => `${CREW[id].name} — ${CREW[id].role}`);
+}

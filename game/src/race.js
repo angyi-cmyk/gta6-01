@@ -1,6 +1,7 @@
 // Street racing: timed checkpoint runs through the city, on the clock.
 // One job: start a race, watch the checkpoints, and remember the best time.
 import { distance } from './random.js';
+import { playCheckpoint } from './audio.js';
 
 // Four corners of the city, in driving order, on road lines.
 export const RACE_COURSE = [
@@ -50,6 +51,7 @@ export function updateStreetRace(state, dt) {
   const cp = race.checkpoints[race.cpIndex];
   if (cp && distance(px, py, cp.x, cp.y) < 120) {
     race.cpIndex += 1;
+    playCheckpoint();
   }
   if (race.cpIndex >= race.checkpoints.length) {
     race.active = false;

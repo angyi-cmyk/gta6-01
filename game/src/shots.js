@@ -83,7 +83,7 @@ function stepWorld(state, dt) {
   updateParticles(state, dt);
   updateMissions(state, dt);
   balancePolice(state);
-  updateCamera(state.camera, state.player.x, state.player.y, dt);
+  updateCamera(state.camera, state, dt);
   state.time += dt;
 }
 
@@ -163,11 +163,18 @@ function stageCover(state) {
   state.missions.target = { x: RACE_COURSE[2].x, y: RACE_COURSE[2].y, label: 'CP3' };
   // No dialogue here: the box would sit across the road and hide the tail
   // cruisers and the roadblock.
-  // Two cruisers right on the player's tail so the chase is in frame.
+  // Two cruisers right on the player's tail so the chase is in frame. A
+  // chase camera sits behind the player, so a cruiser dead behind is under
+  // the camera: the tails flank just behind, one each side, ahead of the
+  // camera and inside the frame.
   const tails = state.cars.filter((c) => c.type === 'police' && !c.wrecked && !c.roadblock);
+  const tailSpots = [
+    { x: car.x - 70, y: car.y - 58 },
+    { x: car.x - 40, y: car.y + 58 },
+  ];
   tails.slice(0, 2).forEach((tail, i) => {
-    tail.x = car.x - 190 - i * 130;
-    tail.y = car.y;
+    tail.x = tailSpots[i].x;
+    tail.y = tailSpots[i].y;
     tail.angle = 0;
     tail.vx = 380;
     tail.vy = 0;
@@ -240,9 +247,13 @@ function stageChase(state) {
   state.player.y = car.y;
   state.player.angle = 0;
   const tails = state.cars.filter((c) => c.type === 'police' && !c.wrecked && !c.roadblock);
+  const tailSpots = [
+    { x: car.x - 70, y: car.y - 58 },
+    { x: car.x - 40, y: car.y + 58 },
+  ];
   tails.slice(0, 2).forEach((tail, i) => {
-    tail.x = car.x - 190 - i * 130;
-    tail.y = car.y;
+    tail.x = tailSpots[i].x;
+    tail.y = tailSpots[i].y;
     tail.angle = 0;
     tail.vx = 400;
     tail.vy = 0;
@@ -263,12 +274,16 @@ function stageMission(state) {
   const vault = spots.vault;
   player.x = vault.x;
   player.y = vault.y - 50; // in the plaza, just north of the vault cash
-  player.aimAngle = Math.PI / 2;
-  player.angle = Math.PI / 2;
+  // Face north, toward the casino fronts: the chase camera sits on the open
+  // road south of the plaza, so the vault ring, the player, the guards and
+  // the neon casino fronts all read in one frame. (Facing south would put
+  // the camera inside the casino buildings.)
+  player.aimAngle = -Math.PI / 2;
+  player.angle = -Math.PI / 2;
   const guardPoints = [
-    { x: 1680, y: 2340 },
-    { x: 1920, y: 2340 },
-    { x: 1800, y: 2400 },
+    { x: 1720, y: 2340 },
+    { x: 1880, y: 2340 },
+    { x: 1860, y: 2400 },
     { x: 1985, y: 2200 },
   ];
   const guards = [];
@@ -312,20 +327,21 @@ function stageMission(state) {
     if (player.health <= 0) break;
   }
   // Final frame: the guards back on their posts around the vault, the cash
-  // glowing in the plaza, the player north of it aiming south at five stars.
+  // glowing in the plaza, the player north of it facing the casino at five
+  // stars — the camera on the open road to the south.
   for (let i = 0; i < state.guards.length; i += 1) {
     const guard = state.guards[i];
     guard.x = guardPoints[i].x;
     guard.y = guardPoints[i].y;
-    guard.angle = Math.PI / 2;
+    guard.angle = Math.atan2(player.y - guard.y, player.x - guard.x);
     guard.health = 60;
     guard.down = false;
     guard.alerted = true;
   }
   player.x = vault.x;
   player.y = vault.y - 50;
-  player.angle = Math.PI / 2;
-  player.aimAngle = Math.PI / 2;
+  player.angle = -Math.PI / 2;
+  player.aimAngle = -Math.PI / 2;
   player.health = 100; // clean final frame, like the cover shot resets the car
   state.missions.stage = 2;
   state.missions.pickupReady = true;
@@ -356,6 +372,8 @@ export function stageShot(name, state) {
   else if (name === 'chase') stageChase(staged);
   else if (name === 'mission') stageMission(staged);
   else stageCover(staged);
-  updateCamera(staged.camera, staged.player.x, staged.player.y, 1);
+  // The chase camera needs a long settle after staging so the first frame
+  // already sits behind the car instead of mid-glide.
+  updateCamera(staged.camera, staged, 1);
   return staged;
 }

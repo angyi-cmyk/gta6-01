@@ -1,4 +1,4 @@
-// Tuning and world constants for Solmar Heat.
+// Tuning and world constants for Neon Bay Nights.
 // One file, one job: every number the game balances on lives here.
 export const WORLD = {
   size: 3600, // the city is a square, WORLD.size x WORLD.size pixels
@@ -67,21 +67,35 @@ export const MISSIONS = {
   startCash: 120,
 };
 
-// Sun-soaked palette: warm sand, teal water, terracotta roofs.
+// Chase camera: how far behind and above the player the 3D camera rides.
+// Driving sits lower and closer for speed; on foot it pulls up and back so
+// the street reads.
+export const CAMERA3D = {
+  fov: 62,
+  driveDist: 210,
+  driveHeight: 100,
+  footDist: 150,
+  footHeight: 120,
+  lookAhead: 90, // how far past the player the camera looks
+  smooth: 5.0, // exponential follow rate (per second)
+};
+
+// Neon-night palette: dark wet streets, lit windows, hot sign colours. The
+// 2D HUD still reads these for its own drawing (player shirt, car colours).
 export const PALETTE = {
-  grass: '#7fae62',
-  grassDry: '#a8b06a',
-  sand: '#e8cf9a',
-  water: '#2f8fae',
-  waterDeep: '#24708c',
-  road: '#3c3f46',
-  roadEdge: '#2c2f35',
+  grass: '#14261c',
+  grassDry: '#1d3325',
+  sand: '#8a7a55',
+  water: '#0a2a3d',
+  waterDeep: '#071e2d',
+  road: '#17181d',
+  roadEdge: '#101116',
   lane: '#e8d44d',
-  sidewalk: '#b9b3a4',
-  buildingRoof: ['#c96f4a', '#d98e5f', '#b85c5c', '#7d8aa0', '#a08a6a', '#8a6f8e', '#5f7d6a'],
-  buildingWall: ['#e8dcc8', '#dfd2b8', '#e5c9a8', '#d8cbb2'],
-  park: '#5d9b4e',
-  tree: ['#3f7a34', '#4d8a3c', '#5da244'],
+  sidewalk: '#3a3d46',
+  buildingRoof: ['#2a2f3a', '#33272f', '#241f2e', '#1f2a33', '#2e2a26', '#262033', '#1e2b26'],
+  buildingWall: ['#3d3a4a', '#463a4a', '#37404f', '#41384a'],
+  park: '#14301c',
+  tree: ['#1d4a26', '#256030', '#2f7038'],
   car: ['#d94f3d', '#3d7dd9', '#e8c832', '#e8e8e8', '#2f2f38', '#7ac74f', '#d97ab0', '#38b8a8'],
   policeCar: '#e8e8e8',
   taxi: '#f2c230',
@@ -89,4 +103,14 @@ export const PALETTE = {
   cop: '#2b4d8f',
   ped: ['#e8b98a', '#c98a5f', '#8a5a3c', '#f0c8a0'],
   shirt: ['#d94f3d', '#3d7dd9', '#e8c832', '#7ac74f', '#d97ab0', '#38b8a8', '#f2f2f2', '#8a6f8e'],
+};
+
+// Neon sign colours, one per landmark sign on the strip.
+export const NEON = {
+  gold: '#ffd23d',
+  pink: '#ff2d78',
+  cyan: '#2de8ff',
+  purple: '#b06fd8',
+  green: '#7dff8a',
+  orange: '#ff9a3d',
 };

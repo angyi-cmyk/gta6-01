@@ -8,8 +8,12 @@ import { updateDriving } from './player.js';
 let nextCarId = 1;
 
 export function makeCar(x, y, angle, options = {}) {
+  // The id must be unique per car: the 3D renderer pools meshes by id, and
+  // two cars sharing one id would draw as one car.
+  const id = nextCarId;
+  nextCarId += 1;
   return {
-    id: nextCarId,
+    id,
     x, y,
     angle,
     vx: 0, vy: 0,
@@ -20,6 +24,9 @@ export function makeCar(x, y, angle, options = {}) {
     topSpeed: options.topSpeed || 330,
     health: CAR.maxHealth,
     wrecked: false,
+    // Neon Bay is a night city: every car's headlights are on, and the 3D
+    // renderer draws the beams from this flag (a wrecked car goes dark).
+    lights: true,
     // Traffic AI: which road axis it follows and which way along it.
     axis: options.axis || 'x',
     direction: options.direction || 1,
@@ -172,6 +179,7 @@ export function wreckCar(car, state) {
   car.vy = 0;
   car.speed = 0;
   car.driver = 'none';
+  car.lights = false; // a wreck goes dark
   if (state && state.addParticles) {
     state.addParticles('explosion', car.x, car.y, 26);
   }
