@@ -4,7 +4,10 @@
 import { VIEW, WORLD, PALETTE, CAR } from './config.js';
 import { ROAD_LINES } from './city.js';
 import { hasSave } from './save.js';
-import { STORY } from './missions.js';
+import { STORY, MISSION_COUNT } from './missions.js';
+import { standingLevel, topDistrict } from './standing.js';
+import { formatRaceTime, RACE_START } from './race.js';
+import { crewNames } from './crew.js';
 
 const MINIMAP_SIZE = 168;
 const MINIMAP_X = 14;
@@ -53,6 +56,17 @@ export function drawMinimap(ctx, state) {
   };
   if (state.missions.target) dot(state.missions.target.x, state.missions.target.y, '#ffd23d', 5);
   if (!state.missions.active && state.missionStart) dot(state.missionStart.x, state.missionStart.y, '#ffd23d', 5);
+  // Street race: the beach start line once the story is done, and the
+  // checkpoints still to hit while a race runs.
+  if (state.race) {
+    if (state.race.active) {
+      for (let i = state.race.cpIndex; i < state.race.checkpoints.length; i += 1) {
+        dot(state.race.checkpoints[i].x, state.race.checkpoints[i].y, '#b06fd8', 4);
+      }
+    } else if (state.missions.index >= MISSION_COUNT) {
+      dot(RACE_START.x, RACE_START.y, '#b06fd8', 5);
+    }
+  }
   for (const car of state.cars) {
     if (car.wrecked) continue;
     if (car.type === 'police') dot(car.x, car.y, '#3d7dd9', 3);
@@ -91,13 +105,27 @@ export function drawHud(ctx, state) {
   ctx.fillStyle = '#fff';
   ctx.font = '13px system-ui, sans-serif';
   ctx.fillText(player.weapon === 'pistol' ? 'PISTOL  •  click to shoot' : 'FISTS  •  click to punch', 24, 88);
+  // Reputation and crew: what the street thinks of Rex, and who rides
+  // with him. Shown under the cash so a screenshot carries them.
+  if (state.standing) {
+    const top = topDistrict(state.standing);
+    ctx.fillStyle = '#ffd23d';
+    ctx.font = 'bold 13px system-ui, sans-serif';
+    ctx.fillText(`REP ${state.standing.rep}  •  LV ${standingLevel(state.standing)}  •  Top turf: ${top.name}`, 24, 108);
+  }
+  const crew = crewNames(state);
+  if (crew.length > 0) {
+    ctx.fillStyle = '#b06fd8';
+    ctx.font = 'bold 13px system-ui, sans-serif';
+    ctx.fillText(`CREW: ${crew.join('  •  ')}`, 24, 126);
+  }
   // Wanted stars, top right.
   drawStars(ctx, state.wanted.stars, VIEW.width - 170, 40);
   if (state.wanted.stars > 0) {
     ctx.fillStyle = '#ff5a4d';
     ctx.font = 'bold 13px system-ui, sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText('WANTED — lose the cops to cool off', VIEW.width - 16, 62);
+    ctx.fillText('WANTED — lose the cops', VIEW.width - 16, 62);
     ctx.textAlign = 'left';
   }
   // Speed, bottom right.
@@ -118,16 +146,32 @@ export function drawHud(ctx, state) {
       ctx.fillText(`CAR ${Math.ceil(player.car.health)}%`, VIEW.width - 150, VIEW.height - 64);
     }
   }
-  // Objective banner, top centre.
+  // Objective banner, top centre. The job counter rides with it so a
+  // screenshot shows the story's size: Job 4 of 9.
   if (state.missions.objective) {
     ctx.font = 'bold 16px system-ui, sans-serif';
-    const text = state.missions.objective;
+    const jobText = state.missions.active && state.missions.index < MISSION_COUNT
+      ? `  •  Job ${state.missions.index + 1} of ${MISSION_COUNT}` : '';
+    const text = state.missions.objective + jobText;
     const width = ctx.measureText(text).width + 28;
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     ctx.fillRect((VIEW.width - width) / 2, 14, width, 32);
     ctx.fillStyle = '#ffd23d';
     ctx.textAlign = 'center';
     ctx.fillText(text, VIEW.width / 2, 36);
+    ctx.textAlign = 'left';
+  }
+  // Race clock, under the objective banner while a race runs.
+  if (state.race && state.race.active) {
+    const race = state.race;
+    const text = `RACE ${formatRaceTime(race.time)}  •  CP ${race.cpIndex + 1}/${race.checkpoints.length}  •  PAR ${formatRaceTime(race.par)}${race.best !== null ? `  •  BEST ${formatRaceTime(race.best)}` : ''}`;
+    ctx.font = 'bold 15px system-ui, sans-serif';
+    const width = ctx.measureText(text).width + 28;
+    ctx.fillStyle = 'rgba(80,20,120,0.75)';
+    ctx.fillRect((VIEW.width - width) / 2, 54, width, 30);
+    ctx.fillStyle = '#e8c8ff';
+    ctx.textAlign = 'center';
+    ctx.fillText(text, VIEW.width / 2, 75);
     ctx.textAlign = 'left';
   }
   // Off-screen target arrow: point at the mission target from the screen edge.
@@ -234,7 +278,7 @@ export function drawTitle(ctx, state, saveAvailable) {
   ctx.fillText('SOLMAR HEAT', VIEW.width / 2, 200);
   ctx.font = '22px system-ui, sans-serif';
   ctx.fillStyle = '#ffe9a8';
-  ctx.fillText('An open-world crime story — steal, drive, run, survive.', VIEW.width / 2, 244);
+  ctx.fillText('Nine jobs. Street races. District standing. A crew that has your back.', VIEW.width / 2, 244);
   ctx.font = '16px system-ui, sans-serif';
   ctx.fillStyle = '#cfe8f2';
   const menu = saveAvailable
@@ -266,8 +310,12 @@ export function drawHowToPlay(ctx) {
     'E — steal the nearest car / get out of your car',
     'Shift — run. Space — handbrake turn while driving.',
     '',
-    'Follow the yellow M to start a job for Delia Voss. Three jobs, one story:',
-    'steal a Comet GT, move a package through the Port, take the ledger from Solmar Tower.',
+    'Follow the yellow M to start a job for Delia Voss. Nine jobs, one story:',
+    'steal cars, move packages, lose the cops, race the streets and finish Rourke for good.',
+    '',
+    'Finish jobs to raise your standing in each district and grow your crew —',
+    'Milo the mechanic, Vera the wheelwoman and Tomas the lookout each pay off',
+    'on the street. Beat the clock in street races from the beach start line.',
     '',
     'Crime raises your wanted stars. The police chase you — lose them and lay low',
     'and the heat cools off. Get caught on foot at zero health and you are WASTED;',

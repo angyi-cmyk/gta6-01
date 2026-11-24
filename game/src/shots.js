@@ -100,10 +100,12 @@ function downtownLoop() {
   ];
 }
 
-// Cover: driving downtown at two stars with cruisers on the tail.
+// Cover: driving downtown at three stars with cruisers on the tail, a job
+// in progress — wanted stars, police, minimap and objective in one frame.
 function stageCover(state) {
-  state.wanted.stars = 2;
+  state.wanted.stars = 3;
   const car = putPlayerInCar(state, 1575, 1575, 0, '#d94f3d');
+  spawnPoliceCar(state);
   spawnPoliceCar(state);
   spawnPoliceCar(state);
   const waypoints = downtownLoop();
@@ -117,6 +119,18 @@ function stageCover(state) {
     state.player.angle = car.angle;
     stepWorld(state, STEP);
   }
+  // Put one cruiser right on the player's tail so the chase is in frame.
+  const tail = state.cars.find((c) => c.type === 'police' && !c.wrecked);
+  if (tail) {
+    const back = car.angle + Math.PI;
+    tail.x = car.x + Math.cos(back) * 190;
+    tail.y = car.y + Math.sin(back) * 190;
+    tail.angle = car.angle;
+    tail.vx = car.vx;
+    tail.vy = car.vy;
+  }
+  state.missions.index = 0;
+  state.missions.active = true;
   state.missions.objective = 'Deliver the Comet GT to Delia\'s garage';
   state.missions.target = { x: 3230, y: 675, label: 'Garage' };
 }

@@ -5,6 +5,7 @@ import { makeRng, clamp, angleDelta, distance, range } from './random.js';
 import { randomRoadPoint, resolveSolid } from './city.js';
 import { makeCar } from './vehicles.js';
 import { playCrash } from './audio.js';
+import { hasCrew } from './crew.js';
 
 export function makeWanted() {
   return {
@@ -135,6 +136,7 @@ export function decayWanted(state, dt) {
 }
 
 // BUSTED: a cruiser has held the player's car still for long enough.
+// Tomas the lookout buys the player 1.5 seconds more before the bust.
 export function checkBusted(state, dt) {
   const wanted = state.wanted;
   const player = state.player;
@@ -142,6 +144,7 @@ export function checkBusted(state, dt) {
     wanted.bustTimer = 0;
     return false;
   }
+  const holdSeconds = POLICE.bustHoldSeconds + (hasCrew(state, 'tomas') ? 1.5 : 0);
   const held = state.cars.some(
     (c) => c.type === 'police' && !c.wrecked
       && distance(c.x, c.y, player.car.x, player.car.y) < 90
@@ -149,7 +152,7 @@ export function checkBusted(state, dt) {
   );
   if (held) {
     wanted.bustTimer += dt;
-    return wanted.bustTimer >= POLICE.bustHoldSeconds;
+    return wanted.bustTimer >= holdSeconds;
   }
   wanted.bustTimer = 0;
   return false;

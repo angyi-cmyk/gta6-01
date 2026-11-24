@@ -11,6 +11,9 @@ import { makeParticles, addParticles, addSkid, updateParticles } from './particl
 import { makeWanted, addWanted, balancePolice, decayWanted, checkBusted, updatePoliceCar } from './police.js';
 import { updateBullets, resolvePunch, enemyShoot, hurtPlayer, carHitsPedestrian } from './combat.js';
 import { makeMissions, updateMissions, tryStartMission, missionStartPoint, onGuardDown } from './missions.js';
+import { makeStanding } from './standing.js';
+import { makeRace, updateStreetRace, tryStartFreeRoamRace } from './race.js';
+import { makeCrew } from './crew.js';
 import { makeCamera, updateCamera, drawWorld } from './render.js';
 import { drawHud, drawTitle, drawHowToPlay, drawPause, drawEndScreen } from './hud.js';
 import { saveGame, loadSave, hasSave } from './save.js';
@@ -34,6 +37,9 @@ export function createState(seed = 20261121) {
     bullets: [],
     particles: makeParticles(),
     missions: makeMissions(),
+    standing: makeStanding(),
+    race: makeRace(),
+    crew: makeCrew(),
     wanted: makeWanted(),
     camera: makeCamera(),
     stats: { kills: 0, earned: 0 },
@@ -70,6 +76,12 @@ function applySave(save) {
   state.stats.kills = save.kills || 0;
   state.missions.index = save.missionIndex;
   state.missions.active = false;
+  if (save.standing) {
+    state.standing.rep = save.standing.rep || 0;
+    Object.assign(state.standing.byDistrict, save.standing.byDistrict || {});
+  }
+  if (Array.isArray(save.crew)) state.crew.joined = save.crew;
+  if (save.bestRaceTime !== null && save.bestRaceTime !== undefined) state.race.best = save.bestRaceTime;
   state.missionStart = missionStartPoint(state);
 }
 
@@ -87,6 +99,15 @@ function resetPlayer(penalty) {
   state.cars = state.cars.filter((c) => c.type !== 'police');
   state.bullets = [];
   state.saveGame();
+  // A bust or a trip to the clinic ends any race in progress.
+  if (state.race && state.race.active) {
+    state.race.active = false;
+    state.race.failed = true;
+    if (state.race.kind === 'freeroam') {
+      state.missions.objective = '';
+      state.missions.target = null;
+    }
+  }
 }
 
 function respawn(penalty) {
@@ -228,8 +249,10 @@ function updatePlay(dt) {
   updateGuards(dt);
   updateBullets(state, dt);
   updateParticles(state, dt);
+  updateStreetRace(state, dt);
   updateMissions(state, dt);
   tryStartMission(state);
+  tryStartFreeRoamRace(state);
   state.missionStart = state.missions.active ? null : missionStartPoint(state);
 
   // Wanted level: police numbers and cooldown.

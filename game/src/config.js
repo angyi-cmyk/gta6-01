@@ -63,7 +63,7 @@ export const WANTED = {
 };
 
 export const MISSIONS = {
-  reward: [500, 1200, 3000],
+  reward: [500, 1200, 3000, 800, 1500, 2000, 2500, 4000, 5000],
   startCash: 120,
 };
 

@@ -8,9 +8,11 @@ An open-world crime game in the browser — a complete original city to explore
 on foot and by car, built for [make.fun's GTA 6 bounty](https://make.fun/bounty/gta6-01).
 
 You are Rex Marlowe, a driver-for-hire in Solmar, a sun-soaked coastal city.
-Steal cars, outrun the police, and run three jobs for the fixer Delia Voss:
-lift a Comet GT from the Marina, move a package through the Port, and take
-the ledger from Solmar Tower.
+Steal cars, outrun the police, and run nine jobs for the fixer Delia Voss:
+lift a Comet GT from the Marina, move a package through the Port, take the
+ledger from Solmar Tower — then steal the Falcon X, haul a crate across town,
+lose a three-star tail, win a street race, break a police blockade and collect
+the crew's cut.
 
 ## Play
 
@@ -35,13 +37,22 @@ node serve.ts   # serves game/ on http://localhost:8080
   flee from danger.
 - Car stealing, arcade driving with drift, and a wanted level (0–5 stars)
   with police cruisers that chase, ram and bust you.
-- Three story missions with objectives, a waypoint arrow, a minimap and
-  dialogue — plus a free-roam city after the story ends.
+- Nine story missions with objectives, a waypoint arrow, a minimap and
+  dialogue — steal cars, move packages, lose the cops, race the streets,
+  fight guards and collect cash drops — plus a free-roam city after the
+  story ends, with repeatable street races from the beach start line.
+- District standing: every finished job earns reputation in the district
+  where it ended, with levels and a top turf shown on the HUD.
+- A crew that joins as the story runs: Milo the mechanic repairs your car
+  before every job, Vera the wheelwoman pays +$250 a job, and Tomas the
+  lookout buys you 1.5 seconds more before a bust.
+- Street racing: four checkpoints across the city against the clock, as a
+  story job and as a repeatable free-roam race, with a best time that saves.
 - Combat on foot (fists, then a pistol), armed guards, bullets, wrecks,
   smoke, sparks and skid marks.
-- HUD with health, cash, wanted stars, speed and a live minimap; a start
-  screen, a how-to-play screen, pause, WASTED / BUSTED screens and a
-  localStorage save.
+- HUD with health, cash, reputation, crew, wanted stars, speed, a race
+  clock and a live minimap; a start screen, a how-to-play screen, pause,
+  WASTED / BUSTED screens and a localStorage save.
 - All sound is synthesized with WebAudio — no audio files.
 
 ## Structure
@@ -61,7 +72,10 @@ node serve.ts   # serves game/ on http://localhost:8080
 | `police.js` | Wanted level, cruiser pursuit, BUSTED |
 | `combat.js` | Bullets, punches, damage |
 | `particles.js` | Smoke, sparks, blood, skid marks |
-| `missions.js` | The three-job story and objectives |
+| `missions.js` | The nine-job story and objectives |
+| `standing.js` | District standing: reputation and levels |
+| `race.js` | Street racing: checkpoints, clock, best time |
+| `crew.js` | The crew roster and what each member is worth |
 | `render.js` | Drawing the world |
 | `hud.js` | HUD, minimap and menus |
 | `save.js` | localStorage save / load |

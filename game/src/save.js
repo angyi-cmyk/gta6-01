@@ -16,6 +16,9 @@ export function saveGame(state) {
       y: player.y,
       carsStolen: player.carsStolen,
       kills: state.stats.kills,
+      standing: state.standing ? { rep: state.standing.rep, byDistrict: state.standing.byDistrict } : null,
+      crew: state.crew ? state.crew.joined : [],
+      bestRaceTime: state.race ? state.race.best : null,
       savedAt: Date.now(),
     };
     window.localStorage.setItem(SAVE_KEY, JSON.stringify(data));
