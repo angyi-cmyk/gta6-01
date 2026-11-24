@@ -72,6 +72,13 @@ export function drawMinimap(ctx, state) {
     if (car.type === 'police') dot(car.x, car.y, '#3d7dd9', 3);
     else if (car.type === 'mission') dot(car.x, car.y, '#e8c832', 3);
   }
+  // Roadblocks: red squares, so the trap reads on the map too.
+  if (state.dispatch) {
+    for (const car of state.dispatch.roadblocks) {
+      ctx.fillStyle = '#ff2d2d';
+      ctx.fillRect(x0 + car.x * scale - 4, y0 + car.y * scale - 4, 8, 8);
+    }
+  }
   // The player: a white dot with a direction tick.
   const player = state.player;
   dot(player.x, player.y, '#ffffff', 4);
@@ -172,6 +179,18 @@ export function drawHud(ctx, state) {
     ctx.fillStyle = '#e8c8ff';
     ctx.textAlign = 'center';
     ctx.fillText(text, VIEW.width / 2, 75);
+    ctx.textAlign = 'left';
+  }
+  // Dispatch radio: red, under the banner (or under the race clock).
+  if (state.dispatch && state.dispatch.line) {
+    const y = state.race && state.race.active ? 96 : 58;
+    ctx.font = 'bold 15px system-ui, sans-serif';
+    const width = ctx.measureText(state.dispatch.line).width + 28;
+    ctx.fillStyle = 'rgba(60,0,0,0.75)';
+    ctx.fillRect((VIEW.width - width) / 2, y, width, 30);
+    ctx.fillStyle = '#ff5a4d';
+    ctx.textAlign = 'center';
+    ctx.fillText(state.dispatch.line, VIEW.width / 2, y + 21);
     ctx.textAlign = 'left';
   }
   // Off-screen target arrow: point at the mission target from the screen edge.

@@ -53,6 +53,8 @@ export function spawnPoliceCar(state) {
 // On foot, a nearby cruiser drops a cop who chases on foot instead.
 export function updatePoliceCar(car, state, dt) {
   if (car.wrecked) return;
+  // A roadblock cruiser stays parked where dispatch put it.
+  if (car.roadblock) return;
   const player = state.player;
   const targetX = player.car ? player.car.x : player.x;
   const targetY = player.car ? player.car.y : player.y;
@@ -99,10 +101,12 @@ export function updatePoliceCar(car, state, dt) {
   }
 }
 
-// Keep the number of active cruisers matched to the wanted level.
+// Keep the number of chasing cruisers matched to the wanted level.
+// Roadblock cars are dispatch's, not the chase pool's: they never count
+// here, so balance never converts one into traffic.
 export function balancePolice(state) {
   const wantedCount = wantedCarCount(state.wanted.stars);
-  const police = state.cars.filter((c) => c.type === 'police' && !c.wrecked);
+  const police = state.cars.filter((c) => c.type === 'police' && !c.wrecked && !c.roadblock);
   if (police.length < wantedCount) {
     spawnPoliceCar(state);
   } else if (police.length > wantedCount) {

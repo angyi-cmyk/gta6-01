@@ -36,7 +36,10 @@ node serve.ts   # serves game/ on http://localhost:8080
 - Traffic that drives the roads and pedestrians who walk the sidewalks and
   flee from danger.
 - Car stealing, arcade driving with drift, and a wanted level (0–5 stars)
-  with police cruisers that chase, ram and bust you.
+  with police cruisers that chase, ram and bust you. At three stars and up,
+  police dispatch throws a roadblock across the road ahead of you — two
+  parked cruisers, called out on the radio and marked on the minimap — until
+  you shake the heat.
 - Nine story missions with objectives, a waypoint arrow, a minimap and
   dialogue — steal cars, move packages, lose the cops, race the streets,
   fight guards and collect cash drops — plus a free-roam city after the
@@ -70,6 +73,7 @@ node serve.ts   # serves game/ on http://localhost:8080
 | `vehicles.js` | Traffic AI, car collisions, wrecks |
 | `pedestrians.js` | Sidewalk walkers who flee danger |
 | `police.js` | Wanted level, cruiser pursuit, BUSTED |
+| `dispatch.js` | Police dispatch: roadblocks at three stars and up |
 | `combat.js` | Bullets, punches, damage |
 | `particles.js` | Smoke, sparks, blood, skid marks |
 | `missions.js` | The nine-job story and objectives |

@@ -9,6 +9,7 @@ import { makeCar, spawnTraffic, updateTrafficCar, collideCars, topUpTraffic, isD
 import { spawnPedestrians, updatePedestrian, scarePedestrians } from './pedestrians.js';
 import { makeParticles, addParticles, addSkid, updateParticles } from './particles.js';
 import { makeWanted, addWanted, balancePolice, decayWanted, checkBusted, updatePoliceCar } from './police.js';
+import { makeDispatch, updateDispatch } from './dispatch.js';
 import { updateBullets, resolvePunch, enemyShoot, hurtPlayer, carHitsPedestrian } from './combat.js';
 import { makeMissions, updateMissions, tryStartMission, missionStartPoint, onGuardDown } from './missions.js';
 import { makeStanding } from './standing.js';
@@ -41,6 +42,7 @@ export function createState(seed = 20261121) {
     race: makeRace(),
     crew: makeCrew(),
     wanted: makeWanted(),
+    dispatch: makeDispatch(),
     camera: makeCamera(),
     stats: { kills: 0, earned: 0 },
     stealPrompt: null,
@@ -255,7 +257,8 @@ function updatePlay(dt) {
   tryStartFreeRoamRace(state);
   state.missionStart = state.missions.active ? null : missionStartPoint(state);
 
-  // Wanted level: police numbers and cooldown.
+  // Wanted level: police numbers, the dispatch roadblock, and cooldown.
+  updateDispatch(state, dt);
   balancePolice(state);
   if (decayWanted(state, dt)) state.saveGame();
   if (checkBusted(state, dt)) {

@@ -8,7 +8,11 @@ import { makePlayer, updateOnFoot, updateDriving, enterCar } from './player.js';
 import { makeCar, updateTrafficCar, collideCars } from './vehicles.js';
 import { updatePedestrian, scarePedestrians } from './pedestrians.js';
 import { updateParticles, addParticles } from './particles.js';
-import { makeWanted, addWanted, balancePolice, updatePoliceCar, spawnPoliceCar } from './police.js';
+import { makeWanted, balancePolice, updatePoliceCar, spawnPoliceCar } from './police.js';
+import { makeDispatch, spawnRoadblock } from './dispatch.js';
+import { startStreetRace, RACE_COURSE } from './race.js';
+import { joinCrew, makeCrew } from './crew.js';
+import { makeStanding } from './standing.js';
 import { updateBullets, enemyShoot } from './combat.js';
 import { updateMissions, missionStartPoint, missionSpots } from './missions.js';
 import { updateCamera } from './render.js';
@@ -100,17 +104,38 @@ function downtownLoop() {
   ];
 }
 
-// Cover: driving downtown at three stars with cruisers on the tail, a job
-// in progress — wanted stars, police, minimap and objective in one frame.
+// Late game, as the judges should see it: REP 80 (LV 3), the full crew in,
+// $5,000 banked. Every shot below starts from here.
+function stageLateGame(state) {
+  state.standing.rep = 80;
+  state.standing.byDistrict.downtown = 40;
+  state.standing.byDistrict.beach = 30;
+  joinCrew(state, 'milo');
+  joinCrew(state, 'vera');
+  joinCrew(state, 'tomas');
+  state.player.money = 5000;
+}
+
+// Cover: Job 7, the Street Kings race, two checkpoints banked at 0:35 —
+// flat out east on the beach road at three stars, a cruiser on the tail and
+// a dispatch roadblock across the intersection ahead.
 function stageCover(state) {
+  stageLateGame(state);
   state.wanted.stars = 3;
-  const car = putPlayerInCar(state, 1575, 1575, 0, '#d94f3d');
+  const car = putPlayerInCar(state, 1125, 3375, 0, '#d94f3d');
   spawnPoliceCar(state);
   spawnPoliceCar(state);
   spawnPoliceCar(state);
-  const waypoints = downtownLoop();
+  startStreetRace(state, 'mission');
+  state.missions.index = 6;
+  state.missions.active = true;
+  state.missions.objective = 'Street race — checkpoint 3 of 4';
+  state.missions.target = { x: RACE_COURSE[2].x, y: RACE_COURSE[2].y, label: 'CP3' };
+  const waypoints = [
+    { x: 2925, y: 3375 }, { x: 675, y: 3375 },
+  ];
   const index = { value: 0 };
-  for (let i = 0; i < 12 / STEP; i += 1) {
+  for (let i = 0; i < 10 / STEP; i += 1) {
     if (car.wrecked) break;
     const drive = driveToward(car, waypoints, index, state);
     updateDriving(car, drive.steer, drive.throttle, false, STEP);
@@ -119,45 +144,76 @@ function stageCover(state) {
     state.player.angle = car.angle;
     stepWorld(state, STEP);
   }
-  // Put one cruiser right on the player's tail so the chase is in frame.
-  const tail = state.cars.find((c) => c.type === 'police' && !c.wrecked);
+  // Final frame, staged for the camera: back on the beach road heading east
+  // at speed, the race clock at 0:35 with 2 of 4 checkpoints banked.
+  car.wrecked = false;
+  car.health = 100;
+  car.x = 1800;
+  car.y = 3375;
+  car.angle = 0;
+  car.vx = 380;
+  car.vy = 0;
+  car.speed = 380;
+  state.player.x = car.x;
+  state.player.y = car.y;
+  state.player.angle = 0;
+  state.race.cpIndex = 2;
+  state.race.time = 35;
+  state.missions.objective = 'Street race — checkpoint 3 of 4';
+  state.missions.target = { x: RACE_COURSE[2].x, y: RACE_COURSE[2].y, label: 'CP3' };
+  // No dialogue here: the box would sit across the road and hide the tail
+  // cruiser and the roadblock.
+  // One cruiser right on the player's tail so the chase is in frame.
+  const tail = state.cars.find((c) => c.type === 'police' && !c.wrecked && !c.roadblock);
   if (tail) {
-    const back = car.angle + Math.PI;
-    tail.x = car.x + Math.cos(back) * 190;
-    tail.y = car.y + Math.sin(back) * 190;
-    tail.angle = car.angle;
-    tail.vx = car.vx;
-    tail.vy = car.vy;
+    tail.x = car.x - 190;
+    tail.y = car.y;
+    tail.angle = 0;
+    tail.vx = 380;
+    tail.vy = 0;
+    tail.speed = 380;
   }
-  state.missions.index = 0;
-  state.missions.active = true;
-  state.missions.objective = 'Deliver the Comet GT to Delia\'s garage';
-  state.missions.target = { x: 3230, y: 675, label: 'Garage' };
+  spawnRoadblock(state, 380);
 }
 
-// On foot at the Marina, mission one waiting, pedestrians about. The player
-// walks south toward the yellow M, so the marker stays in frame.
+// On foot at the Marina cash drop, Job 9: the crew's cut, two stars on the
+// board, the whole crew in. The player walks in from the north and stops
+// beside the drop ring.
 function stageFoot(state) {
+  stageLateGame(state);
+  const spots = missionSpots();
+  const drop = spots.cashDrops[0];
   const player = state.player;
-  player.x = 2900;
-  player.y = 3100;
-  player.aimAngle = -Math.PI / 2;
-  state.missionStart = { x: 2900, y: 3180 };
+  player.x = drop.x;
+  player.y = drop.y - 90;
+  player.aimAngle = Math.PI / 2;
+  player.angle = Math.PI / 2;
   // A few pedestrians strolling the marina front.
   for (let i = 0; i < 6; i += 1) {
     state.peds[i].x = 2750 + i * 55;
     state.peds[i].y = 3080 + (i % 2) * 60;
   }
-  for (let i = 0; i < 2.5 / STEP; i += 1) {
+  for (let i = 0; i < 0.35 / STEP; i += 1) {
     updateOnFoot(player, { x: 0, y: 0.4 }, STEP, false);
     stepWorld(state, STEP);
   }
+  // Mission and wanted set after the walk, so the walk cannot advance the
+  // job and no cruiser crowds the frame: two stars, drop 1 of 3.
+  state.missions.index = 8;
+  state.missions.active = true;
+  state.missions.stage = 0;
+  state.missions.objective = 'Collect the crew\'s cut — cash drop 1 of 3';
+  state.missions.target = { x: drop.x, y: drop.y, label: 'Marina drop' };
+  state.missions.dialogue = { text: 'Delia: "Last job, Rex. Three drops — Marina, Park, Stadium. The crew eats tonight."', seconds: 6 };
+  state.wanted.stars = 2;
 }
 
-// A four-star chase: five cruisers, the player flat out.
+// A four-star chase: flat out east downtown, two cruisers on the tail and a
+// dispatch roadblock across the intersection ahead.
 function stageChase(state) {
+  stageLateGame(state);
   state.wanted.stars = 4;
-  const car = putPlayerInCar(state, 1125, 1125, 0, '#3d7dd9');
+  const car = putPlayerInCar(state, 1125, 1575, 0, '#3d7dd9');
   for (let i = 0; i < 4; i += 1) spawnPoliceCar(state);
   const waypoints = downtownLoop();
   const index = { value: 0 };
@@ -170,24 +226,49 @@ function stageChase(state) {
     state.player.angle = car.angle;
     stepWorld(state, STEP);
   }
+  // Final frame: flat out east on the downtown road, two cruisers on the
+  // tail, a roadblock across the intersection ahead.
+  car.wrecked = false;
+  car.health = 100;
+  car.x = 1575;
+  car.y = 1575;
+  car.angle = 0;
+  car.vx = 400;
+  car.vy = 0;
+  car.speed = 400;
+  state.player.x = car.x;
+  state.player.y = car.y;
+  state.player.angle = 0;
+  const tails = state.cars.filter((c) => c.type === 'police' && !c.wrecked && !c.roadblock);
+  tails.slice(0, 2).forEach((tail, i) => {
+    tail.x = car.x - 190 - i * 130;
+    tail.y = car.y;
+    tail.angle = 0;
+    tail.vx = 400;
+    tail.vy = 0;
+    tail.speed = 400;
+  });
+  spawnRoadblock(state, 380);
 }
 
-// Mission three in progress: guards alerted, the player armed at the tower.
-// The player strafes along the road north of the tower and shoots back — a
-// short, survivable firefight, not a walk into the open.
+// Job 8 in progress at the Port yard: guards alerted, the player armed on
+// the road north of the yard, the evidence glowing in the yard and dispatch
+// already calling the roadblock.
 function stageMission(state) {
+  stageLateGame(state);
   const player = state.player;
   player.weapon = 'pistol';
-  const tower = missionSpots().tower;
-  player.x = tower.x;
-  player.y = tower.y - 260; // on the road north of the tower
+  const yard = missionSpots().portYard;
+  player.x = yard.x;
+  player.y = yard.y - 260; // on the road north of the yard
   player.aimAngle = Math.PI / 2;
+  player.angle = Math.PI / 2;
   const guards = [];
   for (let i = 0; i < 4; i += 1) {
     const angle = (i / 4) * Math.PI * 2;
     guards.push({
-      x: tower.x + Math.cos(angle) * 150,
-      y: tower.y + Math.sin(angle) * 150,
+      x: yard.x + Math.cos(angle) * 150,
+      y: yard.y + Math.sin(angle) * 150,
       angle,
       health: 60,
       down: false,
@@ -197,13 +278,12 @@ function stageMission(state) {
     });
   }
   state.guards = guards;
-  state.missions.index = 2;
+  state.missions.index = 7;
   state.missions.active = true;
   state.missions.stage = 0;
-  state.missions.objective = 'Fight past Rourke\'s guards at Solmar Tower';
-  state.missions.target = { x: tower.x, y: tower.y, label: 'Solmar Tower' };
-  state.missions.dialogue = { text: 'Delia: "Four of his men guard the door. Take the ledger and meet me at the safehouse."', seconds: 6 };
-  addWanted(state, 1, 'the tower alarm went off');
+  state.missions.objective = 'Fight past Rourke\'s men at the Port yard';
+  state.missions.target = { x: yard.x, y: yard.y, label: 'Port yard' };
+  state.missions.dialogue = { text: 'Delia: "Four of his men guard the yard. Take the evidence and meet me at the safehouse."', seconds: 6 };
   for (let i = 0; i < 4 / STEP; i += 1) {
     // Strafe east and west along the road; fire at the nearest guard.
     const strafe = Math.floor(i / 48) % 2 === 0 ? 1 : -1;
@@ -224,6 +304,30 @@ function stageMission(state) {
     stepWorld(state, STEP);
     if (player.health <= 0) break;
   }
+  // Final frame: the guards back on a ring around the yard, the evidence
+  // glowing in the middle, the player on the road north aiming south.
+  for (let i = 0; i < state.guards.length; i += 1) {
+    const angle = (i / 4) * Math.PI * 2;
+    const guard = state.guards[i];
+    guard.x = yard.x + Math.cos(angle) * 150;
+    guard.y = yard.y + Math.sin(angle) * 150;
+    guard.angle = angle;
+    guard.health = 60;
+    guard.down = false;
+    guard.alerted = true;
+  }
+  player.x = yard.x;
+  player.y = yard.y - 260;
+  player.angle = Math.PI / 2;
+  player.aimAngle = Math.PI / 2;
+  state.missions.stage = 1;
+  state.missions.pickupReady = true;
+  state.missions.objective = 'Grab the evidence at the yard';
+  state.missions.target = { x: yard.x, y: yard.y, label: 'Evidence' };
+  state.missions.dialogue = { text: 'Delia: "Evidence in the yard — grab it and run. The cops are already rolling."', seconds: 6 };
+  state.wanted.stars = 3;
+  player.angle = Math.PI / 2;
+  spawnRoadblock(state, 380);
 }
 
 /**
@@ -235,6 +339,9 @@ export function stageShot(name, state) {
   staged.rng = makeRng(7);
   staged.time = 0;
   staged.wanted = makeWanted();
+  staged.dispatch = makeDispatch();
+  staged.standing = makeStanding();
+  staged.crew = makeCrew();
   staged.missions = makeMissions();
   staged.missions.onGuardDown = () => {};
   staged.guards = [];
