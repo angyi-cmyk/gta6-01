@@ -1,7 +1,7 @@
 // Drawing the world: the city, the cars, the people, the effects. One job:
 // turn the game state into a frame the player (and the judge) can read.
 import { WORLD, VIEW, PALETTE, CAR, PLAYER } from './config.js';
-import { CITY, ROAD_LINES, BEACH_TOP, WATER_TOP, isSand } from './city.js';
+import { CITY, CASINO_STRIP, ROAD_LINES, BEACH_TOP, WATER_TOP, isSand } from './city.js';
 import { clamp } from './random.js';
 
 const ROAD_HALF = WORLD.roadWidth / 2;
@@ -139,6 +139,17 @@ function drawBuildings(ctx, camera, target) {
     ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
     ctx.fill();
   }
+  // The Casino Strip: a big gold label across the street frontage, so the
+  // landmark reads from anywhere on the block.
+  ctx.save();
+  ctx.font = 'bold 30px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = 'rgba(0,0,0,0.65)';
+  ctx.strokeText('CASINO STRIP', CASINO_STRIP.label.x, CASINO_STRIP.label.y);
+  ctx.fillStyle = '#ffd23d';
+  ctx.fillText('CASINO STRIP', CASINO_STRIP.label.x, CASINO_STRIP.label.y);
+  ctx.restore();
 }
 
 function drawCar(ctx, car, time) {

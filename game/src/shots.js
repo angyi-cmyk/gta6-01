@@ -204,7 +204,7 @@ function stageFoot(state) {
   state.missions.stage = 0;
   state.missions.objective = 'Collect the crew\'s cut — cash drop 1 of 3';
   state.missions.target = { x: drop.x, y: drop.y, label: 'Marina drop' };
-  state.missions.dialogue = { text: 'Delia: "Last job, Rex. Three drops — Marina, Park, Stadium. The crew eats tonight."', seconds: 6 };
+  state.missions.dialogue = { text: 'Delia: "Three drops — Marina, Park, Stadium. The crew eats tonight."', seconds: 6 };
   state.wanted.stars = 2;
 }
 
@@ -251,25 +251,32 @@ function stageChase(state) {
   spawnRoadblock(state, 380);
 }
 
-// Job 8 in progress at the Port yard: guards alerted, the player armed on
-// the road north of the yard, the evidence glowing in the yard and dispatch
-// already calling the roadblock.
+// Job 10 in progress on the Casino Strip: the Big One. Four guards ring
+// the vault plaza, the vault cash glows, the player is on foot at five
+// stars, the crew is in, REP 80, and dispatch is already calling the
+// roadblock — with the casino fronts and the CASINO STRIP label in frame.
 function stageMission(state) {
   stageLateGame(state);
   const player = state.player;
   player.weapon = 'pistol';
-  const yard = missionSpots().portYard;
-  player.x = yard.x;
-  player.y = yard.y - 260; // on the road north of the yard
+  const spots = missionSpots();
+  const vault = spots.vault;
+  player.x = vault.x;
+  player.y = vault.y - 50; // in the plaza, just north of the vault cash
   player.aimAngle = Math.PI / 2;
   player.angle = Math.PI / 2;
+  const guardPoints = [
+    { x: 1680, y: 2340 },
+    { x: 1920, y: 2340 },
+    { x: 1800, y: 2400 },
+    { x: 1985, y: 2200 },
+  ];
   const guards = [];
   for (let i = 0; i < 4; i += 1) {
-    const angle = (i / 4) * Math.PI * 2;
     guards.push({
-      x: yard.x + Math.cos(angle) * 150,
-      y: yard.y + Math.sin(angle) * 150,
-      angle,
+      x: guardPoints[i].x,
+      y: guardPoints[i].y,
+      angle: Math.PI / 2,
       health: 60,
       down: false,
       alerted: true,
@@ -278,14 +285,14 @@ function stageMission(state) {
     });
   }
   state.guards = guards;
-  state.missions.index = 7;
+  state.missions.index = 9;
   state.missions.active = true;
-  state.missions.stage = 0;
-  state.missions.objective = 'Fight past Rourke\'s men at the Port yard';
-  state.missions.target = { x: yard.x, y: yard.y, label: 'Port yard' };
-  state.missions.dialogue = { text: 'Delia: "Four of his men guard the yard. Take the evidence and meet me at the safehouse."', seconds: 6 };
+  state.missions.stage = 1;
+  state.missions.objective = 'Fight past the casino guards at Golden Palms';
+  state.missions.target = { x: vault.x, y: vault.y, label: 'Vault' };
+  state.missions.dialogue = { text: 'Delia: "Four guards on the vault. Take them down, grab the cash — and be ready to run."', seconds: 6 };
   for (let i = 0; i < 4 / STEP; i += 1) {
-    // Strafe east and west along the road; fire at the nearest guard.
+    // Strafe east and west across the plaza; fire at the nearest guard.
     const strafe = Math.floor(i / 48) % 2 === 0 ? 1 : -1;
     const guard = state.guards.find((g) => !g.down);
     if (guard) {
@@ -304,29 +311,28 @@ function stageMission(state) {
     stepWorld(state, STEP);
     if (player.health <= 0) break;
   }
-  // Final frame: the guards back on a ring around the yard, the evidence
-  // glowing in the middle, the player on the road north aiming south.
+  // Final frame: the guards back on their posts around the vault, the cash
+  // glowing in the plaza, the player north of it aiming south at five stars.
   for (let i = 0; i < state.guards.length; i += 1) {
-    const angle = (i / 4) * Math.PI * 2;
     const guard = state.guards[i];
-    guard.x = yard.x + Math.cos(angle) * 150;
-    guard.y = yard.y + Math.sin(angle) * 150;
-    guard.angle = angle;
+    guard.x = guardPoints[i].x;
+    guard.y = guardPoints[i].y;
+    guard.angle = Math.PI / 2;
     guard.health = 60;
     guard.down = false;
     guard.alerted = true;
   }
-  player.x = yard.x;
-  player.y = yard.y - 260;
+  player.x = vault.x;
+  player.y = vault.y - 50;
   player.angle = Math.PI / 2;
   player.aimAngle = Math.PI / 2;
-  state.missions.stage = 1;
+  player.health = 100; // clean final frame, like the cover shot resets the car
+  state.missions.stage = 2;
   state.missions.pickupReady = true;
-  state.missions.objective = 'Grab the evidence at the yard';
-  state.missions.target = { x: yard.x, y: yard.y, label: 'Evidence' };
-  state.missions.dialogue = { text: 'Delia: "Evidence in the yard — grab it and run. The cops are already rolling."', seconds: 6 };
-  state.wanted.stars = 3;
-  player.angle = Math.PI / 2;
+  state.missions.objective = 'Grab the vault cash at the Casino Strip';
+  state.missions.target = { x: vault.x, y: vault.y, label: 'Vault cash' };
+  state.missions.dialogue = { text: 'Delia: "Vault cash is in the plaza — grab it and run. Five stars, Rex."', seconds: 6 };
+  state.wanted.stars = 5;
   spawnRoadblock(state, 380);
 }
 

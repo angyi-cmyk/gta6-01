@@ -106,7 +106,21 @@ function buildCity(seed) {
     }
   }
   // Landmarks with names the HUD and missions can point at.
-  const tower = buildings.reduce((best, b) => (b.tall && (!best || b.w * b.h > best.w * best.h) ? b : best), null);
+  // The Casino Strip: three bright casino fronts along the north side of
+  // the downtown block south of the park, facing the road. The generated
+  // buildings in this block are replaced, so the strip is always the same.
+  for (let i = buildings.length - 1; i >= 0; i -= 1) {
+    const b = buildings[i];
+    const cx = b.x + b.w / 2;
+    const cy = b.y + b.h / 2;
+    if (cx > 1651 && cx < 1949 && cy > 2101 && cy < 2399) buildings.splice(i, 1);
+  }
+  buildings.push(
+    { x: 1660, y: 2110, w: 90, h: 150, roof: '#9b30ff', wall: '#f2c230', tall: true, name: 'Golden Palms' },
+    { x: 1770, y: 2110, w: 90, h: 140, roof: '#ffd23d', wall: '#d97ab0', tall: false, name: null },
+    { x: 1880, y: 2110, w: 64, h: 140, roof: '#e8c832', wall: '#b06fd8', tall: false, name: null },
+  );
+  const tower = buildings.reduce((best, b) => (b.tall && !b.name && (!best || b.w * b.h > best.w * best.h) ? b : best), null);
   if (tower) tower.name = 'Solmar Tower';
   const marina = { x: 2900, y: 3180, name: 'Marina' };
   const stadium = { x: 600, y: 2600, name: 'Stadium' };
@@ -114,6 +128,17 @@ function buildCity(seed) {
 }
 
 export const CITY = buildCity(20261121);
+
+// The Casino Strip: the landmark row in downtown, its vault plaza and the
+// road-front entrance the Big One starts from. All inside downtown, so the
+// seven district boundaries do not move.
+export const CASINO_STRIP = {
+  x: 1800, y: 2185, // strip centre, between the casino fronts
+  casino: { x: 1705, y: 2185 }, // Golden Palms Casino, centre of the big one
+  vault: { x: 1800, y: 2340 }, // vault cash plaza, just south of the casinos
+  entrance: { x: 1800, y: 2055 }, // on the road north of the strip
+  label: { x: 1800, y: 2095 }, // CASINO STRIP map label, above the fronts
+};
 
 // Beach and water: the strip below the last road line.
 export const BEACH_TOP = ROAD_LINES[ROAD_LINES.length - 1] + ROAD_HALF;

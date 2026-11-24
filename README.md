@@ -8,11 +8,12 @@ An open-world crime game in the browser — a complete original city to explore
 on foot and by car, built for [make.fun's GTA 6 bounty](https://make.fun/bounty/gta6-01).
 
 You are Rex Marlowe, a driver-for-hire in Solmar, a sun-soaked coastal city.
-Steal cars, outrun the police, and run nine jobs for the fixer Delia Voss:
+Steal cars, outrun the police, and run ten jobs for the fixer Delia Voss:
 lift a Comet GT from the Marina, move a package through the Port, take the
 ledger from Solmar Tower — then steal the Falcon X, haul a crate across town,
-lose a three-star tail, win a street race, break a police blockade and collect
-the crew's cut.
+lose a three-star tail, win a street race, break a police blockade, collect
+the crew's cut — and finish with the Big One: the Golden Palms Casino vault
+on the Casino Strip.
 
 ## Play
 
@@ -31,8 +32,8 @@ node serve.ts   # serves game/ on http://localhost:8080
 
 ## What is in the game
 
-- A 3.6 km² city: grid streets, downtown towers, a park, a port container
-  yard, a beach and the sea.
+- A 3.6 km² city: grid streets, downtown towers, a neon Casino Strip with
+  the Golden Palms Casino, a park, a port container yard, a beach and the sea.
 - Traffic that drives the roads and pedestrians who walk the sidewalks and
   flee from danger.
 - Car stealing, arcade driving with drift, and a wanted level (0–5 stars)
@@ -40,9 +41,10 @@ node serve.ts   # serves game/ on http://localhost:8080
   police dispatch throws a roadblock across the road ahead of you — two
   parked cruisers, called out on the radio and marked on the minimap — until
   you shake the heat.
-- Nine story missions with objectives, a waypoint arrow, a minimap and
+- Ten story missions with objectives, a waypoint arrow, a minimap and
   dialogue — steal cars, move packages, lose the cops, race the streets,
-  fight guards and collect cash drops — plus a free-roam city after the
+  fight guards and collect cash drops — plus a final casino-vault heist,
+  the Big One, at five stars — plus a free-roam city after the
   story ends, with repeatable street races from the beach start line.
 - District standing: every finished job earns reputation in the district
   where it ended, with levels and a top turf shown on the HUD.
@@ -76,7 +78,7 @@ node serve.ts   # serves game/ on http://localhost:8080
 | `dispatch.js` | Police dispatch: roadblocks at three stars and up |
 | `combat.js` | Bullets, punches, damage |
 | `particles.js` | Smoke, sparks, blood, skid marks |
-| `missions.js` | The nine-job story and objectives |
+| `missions.js` | The ten-job story and objectives |
 | `standing.js` | District standing: reputation and levels |
 | `race.js` | Street racing: checkpoints, clock, best time |
 | `crew.js` | The crew roster and what each member is worth |

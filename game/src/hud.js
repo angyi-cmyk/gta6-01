@@ -2,7 +2,7 @@
 // and the menus. One job: show the player what is happening, on the canvas so
 // screenshots include it.
 import { VIEW, WORLD, PALETTE, CAR } from './config.js';
-import { ROAD_LINES } from './city.js';
+import { ROAD_LINES, CASINO_STRIP } from './city.js';
 import { hasSave } from './save.js';
 import { STORY, MISSION_COUNT } from './missions.js';
 import { standingLevel, topDistrict } from './standing.js';
@@ -56,6 +56,8 @@ export function drawMinimap(ctx, state) {
   };
   if (state.missions.target) dot(state.missions.target.x, state.missions.target.y, '#ffd23d', 5);
   if (!state.missions.active && state.missionStart) dot(state.missionStart.x, state.missionStart.y, '#ffd23d', 5);
+  // The Casino Strip: a gold landmark dot, always on the map.
+  dot(CASINO_STRIP.x, CASINO_STRIP.y, '#ffd23d', 4);
   // Street race: the beach start line once the story is done, and the
   // checkpoints still to hit while a race runs.
   if (state.race) {
@@ -154,7 +156,7 @@ export function drawHud(ctx, state) {
     }
   }
   // Objective banner, top centre. The job counter rides with it so a
-  // screenshot shows the story's size: Job 4 of 9.
+  // screenshot shows the story's size: Job 4 of 10.
   if (state.missions.objective) {
     ctx.font = 'bold 16px system-ui, sans-serif';
     const jobText = state.missions.active && state.missions.index < MISSION_COUNT
@@ -297,7 +299,7 @@ export function drawTitle(ctx, state, saveAvailable) {
   ctx.fillText('SOLMAR HEAT', VIEW.width / 2, 200);
   ctx.font = '22px system-ui, sans-serif';
   ctx.fillStyle = '#ffe9a8';
-  ctx.fillText('Nine jobs. Street races. District standing. A crew that has your back.', VIEW.width / 2, 244);
+  ctx.fillText('Ten jobs. Street races. District standing. A crew that has your back.', VIEW.width / 2, 244);
   ctx.font = '16px system-ui, sans-serif';
   ctx.fillStyle = '#cfe8f2';
   const menu = saveAvailable
@@ -329,8 +331,8 @@ export function drawHowToPlay(ctx) {
     'E — steal the nearest car / get out of your car',
     'Shift — run. Space — handbrake turn while driving.',
     '',
-    'Follow the yellow M to start a job for Delia Voss. Nine jobs, one story:',
-    'steal cars, move packages, lose the cops, race the streets and finish Rourke for good.',
+    'Follow the yellow M to start a job for Delia Voss. Ten jobs, one story:',
+    'steal cars, move packages, lose the cops, race the streets, rob the casino vault and finish Rourke for good.',
     '',
     'Finish jobs to raise your standing in each district and grow your crew —',
     'Milo the mechanic, Vera the wheelwoman and Tomas the lookout each pay off',

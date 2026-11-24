@@ -1,8 +1,8 @@
-// Missions and story. One job: run the nine-job arc for Rex Marlowe, a
+// Missions and story. One job: run the ten-job arc for Rex Marlowe, a
 // driver-for-hire in Solmar, and tell the HUD what to show.
 import { MISSIONS, PALETTE } from './config.js';
 import { makeRng, distance, range } from './random.js';
-import { CITY, randomRoadPoint } from './city.js';
+import { CITY, CASINO_STRIP, randomRoadPoint } from './city.js';
 import { makeCar } from './vehicles.js';
 import { addWanted } from './police.js';
 import { playMissionComplete, playPhone, playPickup } from './audio.js';
@@ -11,8 +11,9 @@ import { startStreetRace, RACE_COURSE } from './race.js';
 import { joinCrew, hasCrew, CREW } from './crew.js';
 
 // Delia Voss, the fixer, hires Rex. Kane Rourke runs the docks and has been
-// leaning on every driver in Solmar. Nine jobs: the first three break Rourke,
-// the rest are the fallout — and the crew Rex builds along the way.
+// leaning on every driver in Solmar. Ten jobs: the first three break Rourke,
+// the rest are the fallout — and the crew Rex builds along the way. The
+// tenth is the Big One: the Golden Palms Casino vault.
 export const STORY = {
   intro: 'Solmar. Sun, salt and stolen cars. You are Rex Marlowe, a driver with no licence and a fast reputation. Delia Voss has work for you.',
   briefs: [
@@ -25,15 +26,16 @@ export const STORY = {
     'Job 7 — Street Kings: the beach crew runs a race through the city. Four checkpoints, beat the clock, and Vera the wheelwoman will owe you one.',
     'Job 8 — The Blockade: Rourke\'s last men hold the Port yard and the evidence that buries them. Fight through, grab it, and run it to the safehouse.',
     'Job 9 — The Crew\'s Cut: three cash drops are stashed around the city — Marina, Park, Stadium. Collect them all and bring the take to the garage.',
+    'Job 10 — The Big One: the Golden Palms Casino vault on the Casino Strip holds the biggest score in Solmar. Get past the guards, grab the vault cash, and lose a five-star tail to the safehouse.',
   ],
-  done: 'Nine jobs. Rourke is finished, the crew is yours, and every driver in Solmar owes you one. Free roam — the city is yours now, and the beach race line is always open.',
+  done: 'Ten jobs. Rourke is finished, the crew is yours, and every driver in Solmar owes you one. Free roam — the city is yours now, and the beach race line is always open.',
 };
 
-export const MISSION_COUNT = 9;
+export const MISSION_COUNT = 10;
 
 export function makeMissions() {
   return {
-    index: 0, // which mission is current (0..8); 9 means the story is done
+    index: 0, // which mission is current (0..9); 10 means the story is done
     stage: 0, // which stage of the current mission
     active: false,
     objective: '',
@@ -43,6 +45,7 @@ export function makeMissions() {
     pickupReady: false,
     packageHeld: false,
     ledgerHeld: false,
+    cashHeld: false, // Job 10: the vault cash
     dialogue: null, // {text, until} shown in the dialogue box
     dialogueQueue: [],
     cleanTimer: 0, // Job 6: seconds spent at zero wanted stars
@@ -72,8 +75,20 @@ export function missionSpots() {
       { x: 1380, y: 2250, label: 'Park drop' },
       { x: 600, y: 2600, label: 'Stadium drop' },
     ],
+    casino: { x: CASINO_STRIP.casino.x, y: CASINO_STRIP.casino.y },
+    casinoEntrance: { x: CASINO_STRIP.entrance.x, y: CASINO_STRIP.entrance.y },
+    vault: { x: CASINO_STRIP.vault.x, y: CASINO_STRIP.vault.y },
   };
 }
+
+// The four casino guards on the Big One: posts around the vault plaza,
+// clear of the casino fronts so nobody spawns inside a wall.
+const CASINO_GUARDS = [
+  { x: 1680, y: 2340 },
+  { x: 1920, y: 2340 },
+  { x: 1800, y: 2400 },
+  { x: 1985, y: 2200 },
+];
 
 function startMission(state, index) {
   const missions = state.missions;
@@ -83,6 +98,7 @@ function startMission(state, index) {
   missions.active = true;
   missions.packageHeld = false;
   missions.ledgerHeld = false;
+  missions.cashHeld = false;
   missions.pickupReady = false;
   missions.cleanTimer = 0;
   playPhone();
@@ -179,7 +195,12 @@ function startMission(state, index) {
     const drop = spots.cashDrops[0];
     missions.objective = 'Collect the crew\'s cut — cash drop 1 of 3';
     missions.target = { x: drop.x, y: drop.y, label: drop.label };
-    say(missions, 'Delia: "Last job, Rex. Three cash drops are stashed around the city — Marina, Park, Stadium. Collect them all and bring the take to the garage."', 6);
+    say(missions, 'Delia: "Three drops — Marina, Park, Stadium. Collect them all and bring the take to the garage."', 6);
+  } else if (index === 9) {
+    // The Big One: reach the Casino Strip first; the guards come next.
+    missions.objective = 'Reach the Casino Strip — the Big One starts at Golden Palms';
+    missions.target = { x: spots.casinoEntrance.x, y: spots.casinoEntrance.y, label: 'Casino Strip' };
+    say(missions, 'Delia: "The Big One, Rex. The Golden Palms vault holds the biggest score in Solmar. Get to the Casino Strip — and bring the pistol."', 6);
   }
 }
 
@@ -218,6 +239,8 @@ function completeMission(state) {
   } else if (missions.index === 7) {
     joinCrew(state, 'tomas');
     say(missions, `Delia: "Evidence secured. $${reward + bonus}${bonusText}. Tomas the lookout is in — ${CREW.tomas.bonus.toLowerCase()}."`, 7);
+  } else if (missions.index === 8) {
+    say(missions, `Delia: "The crew's cut is in. $${reward + bonus}${bonusText}. One last job, Rex — the biggest one. Meet me at the Casino Strip."`, 7);
   } else {
     say(missions, `${STORY.done} $${state.player.money.toLocaleString('en-US')} banked, and the crew rides with you.`, 8);
   }
@@ -229,22 +252,32 @@ function completeMission(state) {
 }
 
 // Called by combat when a guard goes down: when all guards of a guard job
-// are down, the pickup appears (ledger at the tower, evidence at the yard).
+// are down, the pickup appears (ledger at the tower, evidence at the yard,
+// vault cash at the casino).
 export function onGuardDown(state) {
   const missions = state.missions;
-  if ((missions.index !== 2 && missions.index !== 7) || missions.stage !== 0) return;
+  // The guard phase is stage 0 for Jobs 3 and 8, stage 1 for Job 10 (its
+  // stage 0 is the trip to the Casino Strip).
+  const guardStage = missions.index === 9 ? 1 : 0;
+  if ((missions.index !== 2 && missions.index !== 7 && missions.index !== 9) || missions.stage !== guardStage) return;
   const alive = state.guards.filter((g) => !g.down).length;
   if (alive === 0) {
-    missions.stage = 1;
     const spots = missionSpots();
     if (missions.index === 2) {
+      missions.stage = 1;
       missions.objective = 'Grab the ledger at the tower door';
       missions.target = { x: spots.tower.x, y: spots.tower.y, label: 'Ledger' };
       say(missions, 'Delia: "All four down. The ledger is by the door — grab it."');
-    } else {
+    } else if (missions.index === 7) {
+      missions.stage = 1;
       missions.objective = 'Grab the evidence at the yard';
       missions.target = { x: spots.portYard.x, y: spots.portYard.y, label: 'Evidence' };
       say(missions, 'Delia: "All four down. The evidence is in the yard — grab it."');
+    } else {
+      missions.stage = 2;
+      missions.objective = 'Grab the vault cash at the Casino Strip';
+      missions.target = { x: spots.vault.x, y: spots.vault.y, label: 'Vault cash' };
+      say(missions, 'Delia: "All four down. The vault cash is in the plaza — grab it."');
     }
     missions.pickupReady = true;
   }
@@ -413,6 +446,46 @@ export function updateMissions(state, dt) {
     } else if (distance(px, py, spots.garage.x, spots.garage.y) < 110) {
       completeMission(state);
     }
+  } else if (missions.index === 9) {
+    if (missions.stage === 0) {
+      // Stage 0: reach the Casino Strip entrance.
+      if (distance(px, py, spots.casinoEntrance.x, spots.casinoEntrance.y) < 110) {
+        missions.stage = 1;
+        const guards = [];
+        for (const point of CASINO_GUARDS) {
+          guards.push({
+            x: point.x,
+            y: point.y,
+            angle: 0,
+            health: 60,
+            down: false,
+            alerted: true,
+            shootCooldown: range(state.rng, 0.5, 1.5),
+            speed: 120,
+          });
+        }
+        state.guards = guards;
+        missions.guards = guards;
+        missions.objective = 'Fight past the casino guards at Golden Palms';
+        missions.target = { x: spots.vault.x, y: spots.vault.y, label: 'Vault' };
+        say(missions, 'Delia: "Four guards on the vault. Take them down, grab the cash — and be ready to run."', 6);
+      }
+    } else if (missions.stage === 2) {
+      // Stage 2: grab the vault cash on foot (onGuardDown opened it).
+      if (missions.pickupReady && player.onFoot && distance(player.x, player.y, spots.vault.x, spots.vault.y) < 90) {
+        missions.stage = 3;
+        missions.cashHeld = true;
+        missions.pickupReady = false;
+        missions.objective = 'Escape to the safehouse — five stars on you';
+        missions.target = { x: spots.safehouse.x, y: spots.safehouse.y, label: 'Safehouse' };
+        playPickup();
+        addWanted(state, 5, 'the casino vault alarm went off');
+        say(missions, 'Delia: "Vault cash is yours — and every cop in Solmar is rolling. Five stars. Get to the safehouse."', 6);
+      }
+    } else if (missions.stage === 3 && distance(px, py, spots.safehouse.x, spots.safehouse.y) < 110) {
+      missions.cashHeld = false;
+      completeMission(state);
+    }
   }
 }
 
@@ -431,6 +504,7 @@ export function missionStartPoint(state) {
   if (index === 6) return spots.raceStart;
   if (index === 7) return { x: spots.portYard.x, y: spots.portYard.y };
   if (index === 8) return { x: spots.marinaCar.x, y: spots.marinaCar.y };
+  if (index === 9) return { x: spots.casinoEntrance.x, y: spots.casinoEntrance.y };
   return null;
 }
 

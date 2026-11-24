@@ -81,7 +81,7 @@ function clearRaceObjective(state) {
 export function tryStartFreeRoamRace(state) {
   const race = state.race;
   if (!race || race.active) return;
-  if (!state.missions || state.missions.active || state.missions.index < 9) return;
+  if (!state.missions || state.missions.active || state.missions.index < 10) return;
   const player = state.player;
   const px = player.car ? player.car.x : player.x;
   const py = player.car ? player.car.y : player.y;
